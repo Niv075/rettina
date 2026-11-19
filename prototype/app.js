@@ -444,9 +444,34 @@ async function enterStudent(direct){
   if(document.body.dataset.mode==='student' && App.view===sWelcome) sWelcome();
 }
 
+/* ---------- the gaze frame for Noa's screens ----------
+   Same frame everywhere: a quiet centre (looking there selects nothing), the long-look Today exit
+   always top-start, a secondary action top-end, and "continue" always in the bottom-end forward corner. */
+const EMPTY = '<div class="fr-tile fr-empty"></div>';
+const frTile = (id, icon, label, small = '', go = false, extra = '') =>
+  `<div class="fz dw fr-tile ${go ? 'fr-go' : ''}" id="${id}" ${extra}>${ic(icon)}<b>${label}</b>${small ? `<small>${small}</small>` : ''}</div>`;
+function shell({ back = false, endTop = '', fwd = '', center = '', quiet = true, cls = '' }){
+  stage().innerHTML = `<div class="fr fr-screen ${cls}" id="fr">
+    <div class="fr-start">${back ? frTile('frBack', 'house', tr('Today','היום'), tr('look a little longer','מבט קצת ארוך'), false, 'data-dwell="2"') : EMPTY}${EMPTY}</div>
+    <div class="fr-center ${quiet ? 'quiet' : ''}">${center}</div>
+    <div class="fr-end">${endTop || EMPTY}<div class="fr-slot" id="frFwd">${fwd || '<div class="fr-empty"></div>'}</div></div>
+  </div>`;
+  if(back) $('#frBack').onclick = sToday;
+}
+
 /* 5 · welcome + calibration */
 function sWelcome(){
   clearStage(); setTop(tr('Getting ready','מתכוננים')); App.view = sWelcome;
+  if(App.settings.frame){
+    shell({ center:`<div class="fr-hero">
+        <div class="st-big">${ic('hand')}</div>
+        <div class="st-title">${tr('Hi Noa!','היי נועה!')}</div>
+        <div class="st-sub">${tr("Let's get your eyes ready. When you're ready, look at Start in the corner.",'בואי נכין את העיניים. כשאת מוכנה, תסתכלי על "מתחילים" בפינה.')}</div>
+        <div class="st-adult">${tr('For the adult: stay with Noa for this calibration (about 20 seconds). After that she can learn on her own.','למבוגר שליד נועה: כדאי להישאר איתה בזמן הכיול (כ־20 שניות). אחרי זה היא יכולה ללמוד לבד.')}</div></div>`,
+      fwd: frTile('calGo', 'eye', tr('Start','מתחילים'), '', true) });
+    $('#calGo').onclick = sCalibrate;
+    return;
+  }
   stage().innerHTML = `
   <div class="st-center">
     <div class="st-big">${ic('hand')}</div>
@@ -496,6 +521,15 @@ function sReady(){
   clearStage(); setTop(tr('Ready','מוכנה')); App.view = sReady;
   const notify = App.settings.notify ? tr("You'll get a notification if she asks for a break or for help. ",'תקבלו התראה אם היא תבקש הפסקה או עזרה. ') : '';
   const cal = App.calErr!=null ? tr(` (±${App.calErr} px, targets are 140 px or more)`, ` (±${App.calErr} פיקסלים, והמטרות בגודל 140 פיקסלים ומעלה)`) : '';
+  const handoff = `<div class="handoff"><span class="em">${ic('circle-check')}</span><div><span class="tag">${tr('For the adult','למבוגר שליד נועה')}</span><b>${tr('You can step away. Noa can carry on by herself from here.','אפשר לזוז הצידה. מכאן נועה ממשיכה לבד.')}</b>
+      ${tr(`Calibration is good${cal}. Every screen from now on works by looking, and nothing she picks is sent without her choosing it. `, `הכיול טוב${cal}. מעכשיו כל מסך עובד במבט, ושום דבר לא נשלח בלי שהיא בוחרת בו. `)}${notify}${tr('Her answers and messages go straight to your dashboard.','התשובות וההודעות שלה מגיעות ישר ללוח הבקרה שלכם.')}
+      <small>${tr('To come back, press “Parent” at the top of the screen and enter your PIN.','כדי לחזור, לוחצים על "הורה" בראש המסך ומקלידים קוד.')}</small></div></div>`;
+  if(App.settings.frame){
+    shell({ center:`<div class="fr-hero"><div class="st-ok">${ic('check')}</div>
+        <div class="st-title">${tr('All set, Noa!','הכול מוכן, נועה!')}</div>
+        <div class="st-sub">${tr('Your eyes are ready. You can learn on your own now.','העיניים מוכנות. עכשיו את יכולה ללמוד לבד.')}</div>${handoff}</div>`,
+      fwd: frTile('goToday', 'play', tr("Let's go",'יוצאים לדרך'), '', true) });
+  } else
   stage().innerHTML = `
   <div class="st-center">
     <div class="st-ok">✓</div>
@@ -514,6 +548,20 @@ function sReady(){
 function sToday(){
   clearStage(); setTop(tr('Today','היום')); App.view = sToday;
   const n = App.sched.length, next = nextItem(), doneN = App.sched.filter(x => x.status==='done').length, all = !next;
+  if(App.settings.frame){
+    shell({ center:`<div class="st-headrow">
+        <div><div class="st-title">${all ? `${tr('You did it, Noa!','הצלחת, נועה!')} ${ic('party-popper')}` : tr("Today's learning",'הלמידה של היום')}</div>
+          <div class="st-sub">${tr(`Thursday · ${n} lessons · about ${totalMin()} minutes`, `יום חמישי · ${n} שיעורים · בערך ${totalMin()} דקות`)}</div></div>
+        <div class="st-prog">${App.sched.map(x => `<i class="${x.status}"></i>`).join('')}<span>${tr(`${doneN} of ${n} done`, `${doneN} מתוך ${n} הושלמו`)}</span></div></div>
+      <div class="st-plan">${App.sched.map(it => `<div class="st-item ${it.status==='done'?'done':''} ${it===next?'next':''}">
+          <span class="em">${SUBJ[it.subj].em}</span><div><small>${sn(it.subj)}</small><b>${esc(topicLabel(it))}</b></div>
+          <span class="min">${it.status==='done' ? `✓ ${ltr(it.score)}` : it===next ? tr(`Up next · ${it.min} min`, `הבא בתור · ${it.min} דק׳`) : `${it.min} ${minW()}`}</span></div>`).join('')}</div>`,
+      endTop: frTile('sElse', 'compass', tr('Something else','משהו אחר'), tr('any topic you like','כל נושא שבא לך')),
+      fwd: frTile('sStart', 'play', all ? tr('Learn more','ללמוד עוד') : tr('Start learning','מתחילים ללמוד'), next ? `${tr('Up next','הבא בתור')}: ${esc(topicLabel(next))}` : '', true) });
+    $('#sStart').onclick = sSubjects;
+    $('#sElse').onclick = () => sLearnElse('menu');
+    return;
+  }
   stage().innerHTML = `
   <div class="st-headrow">
     <div><div class="st-title">${all ? `${tr('You did it, Noa!','הצלחת, נועה!')} ${ic('party-popper')}` : tr("Today's learning",'הלמידה של היום')}</div>
@@ -535,7 +583,7 @@ function sToday(){
 
 /* 7 · Start learning: pick a lesson */
 function sSubjects(){
-  clearStage(); setTop(tr('Start learning','מתחילים ללמוד'), true); App.view = sSubjects;
+  clearStage(); setTop(tr('Start learning','מתחילים ללמוד'), !App.settings.frame); App.view = sSubjects;
   const next = nextItem();
   const tiles = App.sched.map(it => ({ it }));
   if(!App.sched.some(x => x.subj==='science')) tiles.push({ it:{ subj:'science', topic:'How plants grow', min:10 }, extra:true });
@@ -554,6 +602,17 @@ function sSubjects(){
       <div class="st-subj-mid"><small>${sn(it.subj)}</small><b>${esc(topicLabel(it))}</b></div>
       <div class="st-subj-foot"><span>${ic('timer')} ${it.min} ${minW()}</span><span class="more">${esc(more)}</span></div></div>`;
   };
+  const head = `<div class="st-headrow">
+    <div><div class="st-title">${tr('Start learning','מתחילים ללמוד')}</div><div class="st-sub">${tr('Look at a lesson to start it. Ollie, your teacher, will teach you.','תסתכלי על שיעור כדי להתחיל. ינשופי, המורה שלך, ילמד אותך.')}</div></div>
+    <div class="st-sess"><b>${left} ${minW()}</b><small>${tr("left on today's plan",'נשארו בתוכנית של היום')}</small></div></div>`;
+  if(App.settings.frame){
+    /* a choice screen: the choices fill the centre with wide gaps; "continue the plan" stays in the forward corner */
+    const upNext = next && next.subj!=='free' ? next : null;
+    shell({ back:true, quiet:false, cls:'fr-choose',
+      center:`${head}<div class="st-grid">${shown.map(tile).join('')}</div>`,
+      fwd: upNext ? frTile('sNext', 'play', tr('Up next','הבא בתור'), esc(topicLabel(upNext)), true) : '' });
+    if(upNext) $('#sNext').onclick = () => openItem(upNext);
+  } else
   stage().innerHTML = `
   <div class="st-headrow">
     <div><div class="st-title">${tr('Start learning','מתחילים ללמוד')}</div><div class="st-sub">${tr('Look at a lesson to start it. Ollie, your teacher, will teach you.','תסתכלי על שיעור כדי להתחיל. ינשופי, המורה שלך, ילמד אותך.')}</div></div>
@@ -576,10 +635,12 @@ App.openItem = openItem;
 
 /* "Learn something else" and free choice reuse the Learn module (topic menu + gaze keyboard) */
 function sLearnElse(what){
-  clearStage(); setTop(tr('Learn something else','ללמוד משהו אחר'), true);
+  clearStage(); setTop(tr('Learn something else','ללמוד משהו אחר'), !App.settings.frame);
   App.view = () => sLearnElse('menu');
   stage().innerHTML = '';
-  const lb = $('#learnBox'); stage().appendChild(lb);
+  const lb = $('#learnBox');
+  if(App.settings.frame){ shell({ back:true, quiet:false, cls:'fr-learn' }); $('#fr .fr-center').appendChild(lb); }
+  else stage().appendChild(lb);
   if(what==='menu') Learn.open(); else chooseTopic(tp(what), 'menu', 1);
 }
 const origDone = window.renderDone;
@@ -613,7 +674,7 @@ $('#sSound').onclick = () => {
 };
 $('#toStudent').onclick = openSwitch;
 /* compare lesson layouts: the gaze frame (default) or the classic layout */
-function layoutLabel(){ const el = $('#sLayoutL'); if(el) el.textContent = App.settings.frame ? tr('Layout: Frame','פריסה: מסגרת') : tr('Layout: Classic','פריסה: קלאסית'); }
+function layoutLabel(){ const el = $('#sLayoutL'); if(el) el.textContent = App.settings.frame ? tr('Layout: Frame','פריסה: מסגרת') : tr('Layout: Classic','פריסה: קלאסית'); }   // applies to all of Noa's screens
 $('#sLayout').onclick = () => {
   App.settings.frame = !App.settings.frame; layoutLabel();
   log('layout', App.settings.frame ? 'frame' : 'classic');

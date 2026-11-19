@@ -8,11 +8,33 @@ Newest first. Each entry lists what changed, the files touched, and how to undo 
 |---|---|
 | `d0cd5de` (main) | Initial prototype: Conversation, Learn, Homework, Level Check |
 | `b82d1c7` (main) | Everything below up to and including the lavender redesign. **Last state before the lesson frame.** |
-| `lesson-frame` (branch) | The lesson frame prototype (this entry and later) |
+| tag `before-frame` = `b82d1c7` | Same restore point, kept as a tag after the frame was merged into `main` |
+| `f879013` | Lesson screen in the frame |
+| `main` (latest) | The frame on all of Noa's screens (merged from `lesson-frame`, pushed to GitHub) |
 
-To go back to the state before the frame: `git switch main` (keeps the frame work on its branch).
-To drop the frame for good: `git switch main && git branch -D lesson-frame`.
-To compare without git: in Noa's mode press **Layout: Frame / Classic** in the top bar, or open the link with `#classic`.
+To see the state before the frame: `git switch --detach before-frame`.
+To undo the frame on `main` for good, keeping history: `git revert --no-edit before-frame..main` (creates undo commits), then push.
+To compare without git: in Noa's mode press **Layout: Frame / Classic** in the top bar, or open the link with `#classic`. The switch now applies to all of Noa's screens.
+
+---
+
+## 2026-11-19 · The gaze frame on all of Noa's screens
+
+**What changed**: the welcome/calibration, ready, Today, Start learning and Learn something else screens use the same frame as the lesson:
+- **Top-start corner:** *Today*, the long-look exit (2× look time). Not shown where Noa already is at home (welcome, ready, Today).
+- **Top-end:** one secondary action (Today screen: *Something else*).
+- **Bottom-end forward corner:** the main "continue" action, always in the same place: *Start* (welcome), *Let's go* (ready), *Start learning* (Today), *Up next* (Start learning).
+- **Quiet centre** on welcome, ready and Today: titles, the plan and the adult hand-off note, where looking selects nothing.
+- **Choice screens** (Start learning, Learn topic menu and keyboard): the choices fill the centre with wide gaps (20–44 px) and less small text; the exit and forward corners stay in place.
+- Empty corners stay reserved (invisible), so positions never shift between screens.
+- The *Layout: Frame / Classic* switch now covers all of these screens; Classic is unchanged.
+
+**Files**
+- `app.js`: `shell()` and `frTile()` helpers; frame branches in `sWelcome`, `sReady`, `sToday`, `sSubjects`, `sLearnElse`; the top-bar *Today* tile is hidden in the frame (the frame has its own corner).
+- `index.html`: `.fr-screen`, `.fr-hero`, `.fr-empty`, `.fr-choose`, `.fr-learn` styles.
+- The tour needed no changes: the frame keeps the same element IDs (`calGo`, `goToday`, `sStart`, `sElse`, `.st-plan`, `.st-grid`).
+
+**Undo just this:** `git revert <this commit>`, or press *Layout: Classic*.
 
 ---
 

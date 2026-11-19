@@ -603,6 +603,21 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
   .fr-bank{grid-template-columns:repeat(2,1fr)}.fr-bank .bk.sent{grid-column:span 2}
 }
 
+/* ---------- the frame on Noa's other screens ---------- */
+.fr-screen{grid-template-rows:minmax(0,1fr);grid-template-areas:"start center end"}
+.fr-empty{visibility:hidden;border:0}
+.fr-hero{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(12px,2vh,22px);text-align:center}
+.fr-hero .st-ok{font-size:clamp(40px,4vw,64px)}
+.fr-hero .st-ok svg.lucide{width:1em;height:1em;stroke-width:3}
+.fr-center .st-plan{justify-content:flex-start;overflow:auto}
+.fr-center .st-headrow{flex:none}
+.fr-choose .fr-center,.fr-learn .fr-center{background:transparent;border:0;padding:0}
+.fr-choose .st-grid{gap:clamp(20px,2.6vw,44px)}
+.fr-choose .st-subj-foot .more{display:none}
+.fr-learn .learn{padding:0;flex:1;min-height:0}
+.fr-learn .lgrid,.fr-learn .lbtns,.fr-learn .sugrow{gap:clamp(18px,2.2vw,40px)}
+@media (max-width:820px){.fr-screen{grid-template-rows:auto minmax(260px,1fr) auto;grid-template-areas:"start start" "center center" "end end"}}
+
 /* ---------- phone width ---------- */
 @media (max-width:820px){
   body{flex-direction:column;overflow:auto;height:auto;min-height:100%}
