@@ -334,7 +334,7 @@ function start(item, hooks, carry){
     stage.innerHTML = `
   <div class="fr" id="fr">
     <div class="fr-head lz-head">
-      <span class="subj">${S.em} <b>${App.sn(item.subj)}</b> · ${esc(App.tp(item.topic))}</span>
+      <span class="subj">${S.em} <b>${App.sn(item.subj)}</b> · ${esc(App.tp(item.topic))} ${window.Sources?.badge(item.subj) || ''}</span>
       <div class="lz-steps" id="lzSteps"></div>
       <span class="sp"></span>
       <span class="meta" id="lzStars">${ic('star')} ${L.stars}</span>
@@ -366,7 +366,7 @@ function start(item, hooks, carry){
   } else {
   stage.innerHTML = `
   <div class="lz-head">
-    <span class="subj">${S.em} <b>${App.sn(item.subj)}</b> · ${esc(App.tp(item.topic))}</span>
+    <span class="subj">${S.em} <b>${App.sn(item.subj)}</b> · ${esc(App.tp(item.topic))} ${window.Sources?.badge(item.subj) || ''}</span>
     <div class="lz-steps" id="lzSteps"></div>
     <span class="sp"></span>
     <span class="meta" id="lzStars">${ic('star')} ${L.stars}</span>

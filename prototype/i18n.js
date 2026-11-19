@@ -6,7 +6,7 @@
 const I18N = {
 en: {
   'name.noa':'Noa', 'noa.initial':'N', demo:'Demo ▾',
-  'nav.parent':'Parent', 'nav.dash':'Dashboard', 'nav.dash.s':'Yesterday · today · this year', 'nav.sched':"Today's schedule",
+  'nav.parent':'Parent', 'nav.dash':'Dashboard', 'nav.dash.s':'Yesterday · today · this year', 'nav.sched':"Today's schedule", 'nav.sources':'Sources', 'nav.sources.s':'Ministry · school · your files',
   'nav.switch':"Switch to Noa's mode", 'nav.modules':'Modules',
   'nav.convo':'Conversation', 'nav.convo.s':'Predictive words · sentence completion',
   'nav.learn':'Learn', 'nav.learn.s':'What would you like to learn?',
@@ -21,6 +21,7 @@ en: {
   'hdr.last':'Last message:', 'hdr.signout':'Sign out', 'hdr.proto':'PROTOTYPE',
   'title.dash':'Dashboard', 'crumb.dash':'Noa · Grade 3',
   'title.sched':"Today's schedule", 'crumb.sched':'Review and confirm before Noa starts',
+  'title.sources':'Sources', 'crumb.sources':'Official curriculum and your own files',
   'title.convo':'Conversation', 'crumb.convo':'Grade 3 · History · "Life in Medieval Times"',
   'title.learn':'Learn', 'crumb.learn':'Student-chosen topics · gaze keyboard with autocomplete',
   'title.hw':'Accessible Homework', 'crumb.hw':'Teacher workspace · AI drafts, teacher approves',
@@ -57,7 +58,7 @@ en: {
 },
 he: {
   'name.noa':'נועה', 'noa.initial':'נ', demo:'הדגמה ▾',
-  'nav.parent':'הורה', 'nav.dash':'לוח בקרה', 'nav.dash.s':'אתמול · היום · השנה', 'nav.sched':'הלו״ז של היום',
+  'nav.parent':'הורה', 'nav.dash':'לוח בקרה', 'nav.dash.s':'אתמול · היום · השנה', 'nav.sched':'הלו״ז של היום', 'nav.sources':'מקורות', 'nav.sources.s':'משרד החינוך · בית הספר · הקבצים שלכם',
   'nav.switch':'מעבר למצב של נועה', 'nav.modules':'מודולים',
   'nav.convo':'שיחה', 'nav.convo.s':'מילים חזויות · השלמת משפטים',
   'nav.learn':'למידה', 'nav.learn.s':'מה בא לך ללמוד?',
@@ -72,6 +73,7 @@ he: {
   'hdr.last':'הודעה אחרונה:', 'hdr.signout':'יציאה', 'hdr.proto':'אב־טיפוס',
   'title.dash':'לוח בקרה', 'crumb.dash':'נועה · כיתה ג׳',
   'title.sched':'הלו״ז של היום', 'crumb.sched':'בדיקה ואישור לפני שנועה מתחילה',
+  'title.sources':'מקורות', 'crumb.sources':'תוכנית הלימודים הרשמית והקבצים שלכם',
   'title.convo':'שיחה', 'crumb.convo':'כיתה ג׳ · היסטוריה · "החיים בימי הביניים"',
   'title.learn':'למידה', 'crumb.learn':'נושאים שהתלמידה בוחרת · מקלדת מבט עם השלמה אוטומטית',
   'title.hw':'שיעורי בית נגישים', 'crumb.hw':'סביבת המורה · ה־AI מנסח, המורה מאשרת',

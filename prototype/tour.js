@@ -137,10 +137,27 @@ const CH = [
     await click('#schedPg [data-act=confirm]'); await w(1800);
   },
   async () => {
+    say('Sources','מקורות',
+        'Lessons come only from approved sources. The Ministry of Education curriculum is the official backbone (sample entries in this demo).',
+        'השיעורים מגיעים רק ממקורות מאושרים. תוכנית הלימודים של משרד החינוך היא הבסיס הרשמי (רשומות לדוגמה בהדגמה).');
+    await click('.nav button[data-v="sources"]'); await w(600);
+    await hl('#srcMinistry', 4200);
+    say('Adding your own files','הוספת קבצים משלכם',
+        'A parent can add a school worksheet or any PDF or Word file. It is read right here in the browser and checked for other children\'s names.',
+        'הורה יכול להוסיף דף עבודה מבית הספר או כל קובץ PDF או Word. הקובץ נקרא כאן בדפדפן ונבדק לשמות של ילדים אחרים.');
+    await hl('#srcDrop', 2600);
+    await window.Sources.addSample(); await w(1000);
+    await hl('.src-up', 4200);
+    say('Approve before Noa sees it','אישור לפני שנועה רואה',
+        'Nothing reaches Noa until the parent approves it. From now on her History lessons show both sources.',
+        'שום דבר לא מגיע לנועה לפני שההורה מאשר. מעכשיו שיעורי ההיסטוריה שלה מראים את שני המקורות.');
+    await click('.src-up [data-src=approve]'); await w(1800);
+  },
+  async () => {
     say('Hand over to Noa','העברה לנועה',
         'One click switches the screen to Noa\'s mode. The parent picks how she selects: webcam eye gaze, head pointer, or the mouse for this demo.',
         'לחיצה אחת מעבירה את המסך למצב של נועה. ההורה בוחר איך היא בוחרת: מבט עיניים במצלמה, הצבעה בראש, או עכבר בהדגמה הזאת.');
-    await click('#schedPg [data-act=switch]'); await w(500);
+    await click('#toStudent'); await w(500);
     await hl('#modalCard .seg', 2800);
     await click('#modalCard [data-in=mouse]');
     await hl('#modalCard .sw-i:nth-child(4)', 2600);
@@ -183,6 +200,10 @@ const CH = [
           'Every action has a fixed place on the edge, so her eyes learn where to go: Today and Talk on one side, Again and Next on the other.',
           'לכל פעולה יש מקום קבוע בשוליים, כך שהעיניים לומדות לאן ללכת: "היום" ו"לדבר" בצד אחד, "שוב" ו"הבא" בצד השני.');
       await hl('.fr-start', 2400); await hl('.fr-end', 2400); }
+    say('Every lesson shows its source','כל שיעור מראה את המקור שלו',
+        'The badge shows where this lesson comes from: the Ministry curriculum plus the worksheet the parent approved.',
+        'התג מראה מאיפה השיעור מגיע: תוכנית הלימודים של משרד החינוך ודף העבודה שההורה אישר.');
+    await hl('.src-badge', 3200);
     await waitFor('#lzCont', 40000); await w(1500);
     await look('#lzCont');
     await waitFor('#lzCont', 40000); await w(800);

@@ -18,6 +18,36 @@ To compare without git: in Noa's mode press **Layout: Frame / Classic** in the t
 
 ---
 
+## 2026-11-19 · Sources: Ministry of Education library + parent file uploads
+
+**Why:** the team wants lessons grounded in official curriculum material; parents also need a way to add the school's own worksheets and custom files as context.
+
+**What changed**
+- **New parent page: Sources** (sidebar, under Today's schedule), with three trust levels:
+  1. **Official: Ministry of Education.** A connected curriculum library for Grade 3 History, Language, Math and Science. These are **clearly labelled sample entries**: a real integration needs the Ministry's permission and terms of use, so the demo never presents them as real documents.
+  2. **School and teacher files.** What the class is learning this week, approved by the teacher.
+  3. **Your files.** Extra context; nothing reaches Noa until the parent approves.
+- **Real file reading in the browser:** PDF (PDF.js 3.11.174) and Word .docx (Mammoth 1.6.0), both from cdnjs and loaded only when a file is added, plus .txt/.md. Drag and drop or a file picker; several files at once.
+- **Each uploaded file shows** its type, word and page count, who added it, a guessed subject, a text preview, and a **privacy check** that lists possible names of other people (English and common Hebrew names) to remove before approving.
+- **Actions per file:** *Approve for Noa*, *Make questions from it* (sends the text to the Accessible Homework generator), *Remove*.
+- **Every lesson shows its source:** a badge in the lesson header, e.g. "Ministry of Education + 📎 Class worksheet - Castles", listing approved files for that subject only.
+- **Rules shown to parents:** Rettina answers only from listed sources; official sources win on facts, school files win on "this week"; file text is treated as reference, never as instructions.
+- **Tour:** a new chapter after the schedule (16 chapters total). It opens Sources, adds a sample class worksheet through the real reader, shows the name check (Dan, Yael) and approves it. The lesson chapter then highlights the source badge. The handover now uses the sidebar button.
+
+**Files**
+- `sources.js` (new): library data, file readers, name check, subject guess, page rendering, `badge()`, `addSample()`, `reset()`.
+- `index.html`: Sources nav item and page, script tag, `.src-*` styles.
+- `i18n.js`: nav and title strings (English and Hebrew).
+- `lesson.js`: source badge in the lesson header (both layouts).
+- `app.js`: `App.reset` clears uploads.
+- `tour.js`: Sources chapter, badge highlight, handover via `#toStudent`.
+
+**Limits:** uploads live in the browser tab only (lost on reload). The hosted demo can't call the AI, so approved files currently drive the source badge and the question generator, not new lesson text. Scanned PDFs without real text show "couldn't read".
+
+**Undo just this:** `git revert <this commit>`.
+
+---
+
 ## 2026-11-19 · The gaze frame on all of Noa's screens
 
 **What changed**: the welcome/calibration, ready, Today, Start learning and Learn something else screens use the same frame as the lesson:

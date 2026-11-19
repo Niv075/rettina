@@ -46,6 +46,7 @@ App.today = { answers:[], said:[], breaks:0 };
 App.reset = () => {
   Object.assign(App, { sched:defaultSched(), today:{ answers:[], said:[], breaks:0 }, confirmed:false, confirmedAt:'', calErr:null, input:'mouse', adult:ADULTS.parent });
   Object.assign(App.settings, { breakMin:3, confirmStep:true, readAloud:true, notify:true, frame:true });
+  window.Sources?.reset();
   layoutLabel();
   if($('#inputMode').value!=='mouse'){ $('#inputMode').value='mouse'; window.Gaze?.setMode('mouse'); }
   state.dwellOn = true; $('#dwellOn').checked = true;

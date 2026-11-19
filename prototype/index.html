@@ -618,6 +618,21 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
 .fr-learn .lgrid,.fr-learn .lbtns,.fr-learn .sugrow{gap:clamp(18px,2.2vw,40px)}
 @media (max-width:820px){.fr-screen{grid-template-rows:auto minmax(260px,1fr) auto;grid-template-areas:"start start" "center center" "end end"}}
 
+/* ---------- sources ---------- */
+.src-wrap{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;align-items:start}
+@media (max-width:1000px){.src-wrap{grid-template-columns:1fr}}
+.src-drop{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:26px 16px;border:2px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:18px;background:var(--soft);cursor:pointer;transition:background .15s,border-color .15s}
+.src-drop:hover,.src-drop.over{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--panel))}
+.src-drop small{color:var(--muted)}
+.src-drop-ic{display:grid;place-items:center;width:52px;height:52px;border-radius:16px;background:var(--grad);color:#fff;font-size:24px}
+.src-up.ok{border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.src-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.src-meta{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.src-text{font-size:13.5px;line-height:1.5;background:var(--code);border-radius:10px;padding:10px 12px;max-height:140px;overflow:auto;white-space:pre-wrap}
+.src-badge{display:inline-flex;align-items:center;gap:5px;font-size:.62em;font-weight:600;color:var(--accent);background:var(--soft);border-radius:99px;padding:3px 10px;vertical-align:middle;margin-inline-start:6px;white-space:nowrap;max-width:46ch;overflow:hidden;text-overflow:ellipsis}
+.src-plus{color:var(--ink);font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.rowi .em:not(:has(svg)){font-weight:800;color:var(--accent)}
+
 /* ---------- phone width ---------- */
 @media (max-width:820px){
   body{flex-direction:column;overflow:auto;height:auto;min-height:100%}
@@ -682,6 +697,7 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
   <div class="nav">
     <button data-v="dash" class="on"><i data-lucide="house"></i> <span><span data-i18n="nav.dash">Dashboard</span><small data-i18n="nav.dash.s">Yesterday · today · this year</small></span></button>
     <button data-v="sched"><i data-lucide="calendar-days"></i> <span><span data-i18n="nav.sched">Today's schedule</span><small id="schedNavSub">Needs your review</small></span></button>
+    <button data-v="sources"><i data-lucide="library"></i> <span><span data-i18n="nav.sources">Sources</span><small data-i18n="nav.sources.s">Ministry · school · your files</small></span></button>
   </div>
   <button class="btn primary switch-side" id="toStudent"><i data-lucide="sparkles"></i> <span data-i18n="nav.switch">Switch to Noa's mode</span></button>
   <div class="nav-label" data-i18n="nav.modules">Modules</div>
@@ -730,6 +746,9 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
 
   <!-- 3 · SCHEDULE REVIEW -->
   <section class="view" id="sched"><div class="pg" id="schedPg"></div></section>
+
+  <!-- SOURCES -->
+  <section class="view" id="sources"><div class="pg" id="sourcesPg"></div></section>
 
   <!-- CONVERSATION -->
   <section class="view" id="convo">
@@ -1071,6 +1090,7 @@ if(window.LLM) initConvo(); else addEventListener('llm-ready', initConvo, {once:
 <script src="homework.js"></script>
 <script src="quiz.js"></script>
 <script src="app.js"></script>
+<script src="sources.js"></script>
 <script src="lesson.js"></script>
 <script src="tour.js"></script>
 <script type="module" src="llm.js"></script>
