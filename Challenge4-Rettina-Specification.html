@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מסמך אפיון - פלטפורמת למידה אישית</title>
+<style>
+:root{
+  --bg:#f6f4ef; --card:#ffffff; --ink:#1d2433; --muted:#5b6475; --line:#e2ddd2;
+  --accent:#2f6fed; --accent-soft:#e6eefe; --good:#1a8a5c; --good-soft:#e1f5ec; --warn:#b53325; --hl:#ffe08a;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12151c; --card:#1b2030; --ink:#eef1f7; --muted:#a2aabb; --line:#2c3347;
+    --accent:#7fa6ff; --accent-soft:#1f2b4a; --good:#52d19b; --good-soft:#163026; --warn:#ff8f80; --hl:#6b5a1d;
+  }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,Arial,sans-serif;line-height:1.6;font-size:16.5px}
+.wrap{max-width:900px;margin:0 auto;padding:0 20px 60px}
+header{padding:40px 0 10px}
+.tag{display:inline-block;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:3px 12px;border-radius:99px}
+h1{font-size:clamp(26px,4.5vw,38px);line-height:1.2;margin:10px 0 6px}
+h2{font-size:clamp(20px,2.6vw,25px);margin:34px 0 10px;padding-top:6px;border-top:2px solid var(--line)}
+h3{font-size:17px;margin:16px 0 6px}
+p{margin:0 0 10px}
+.lead{color:var(--muted)}
+.fill{background:var(--hl);color:#1d2433;padding:0 5px;border-radius:5px;font-weight:700;font-size:.92em;white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:15px;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0 12px}
+th,td{border-bottom:1px solid var(--line);padding:8px 10px;text-align:right;vertical-align:top}
+th{font-size:13px;color:var(--muted);background:var(--bg)}
+td.us{color:var(--good);font-weight:600}
+.tablewrap{overflow-x:auto}
+ul,ol{margin:4px 0 10px;padding-right:22px}
+li{margin-bottom:4px}
+.flow{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;margin:10px 0}
+.node{flex:1 1 140px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:14px}
+.node b{display:block}
+.arrow{align-self:center;color:var(--muted);font-weight:800}
+.board{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;max-width:420px;margin:6px 0 10px}
+.board span{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;font-weight:700;font-size:14px}
+.board .core{background:var(--good-soft);color:var(--good)}
+.board .strip{grid-column:1/-1;background:var(--accent-soft);color:var(--accent);text-align:right}
+.formula{font-family:ui-monospace,Consolas,monospace;direction:ltr;text-align:left;background:var(--card);border:1px dashed var(--accent);border-radius:10px;padding:8px 12px;font-size:14px;margin:6px 0}
+footer{margin-top:36px;color:var(--muted);font-size:13px}
+@media print{h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <span class="tag">האקתון ״יחיד במינו״ · אתגר 4 · פלטפורמת למידה והתפתחות</span>
+  <h1>מסמך אפיון: פלטפורמת למידה אישית לבנות עם RETT, כיתות א׳–י״ב</h1>
+  <p class="lead">שם המוצר: <span class="fill">להחליט</span> · גרסה 4 · 19.11.2026 · שדות מסומנים <span class="fill">כך</span> דורשים השלמה או אימות</p>
+</header>
+
+<h2>תקציר</h2>
+<p>פלטפורמה שמלמדת בת עם RETT לפי תוכנית הלימודים של משרד החינוך, בקצב שלה. מורה AI מפרק כל נושא למקטעים של כ-10 דקות ומלמד אותם ממקורות מהימנים בלבד. הילדה מתקשרת איתו במבט, דרך לוח מילים שה-AI בונה תוך כדי הלמידה. המערכת בודקת את רמת הידע ומציגה אותה למורה ולהורים.</p>
+
+<h2>1. הצורך</h2>
+<p><b>למי:</b> בנות עם RETT בכיתות א׳–י״ב. הן מבינות הסברים, אין להן דיבור ושימוש מכוון בידיים, ובדרך כלל המבט הוא ערוץ הקלט האמין שלהן. זמן התגובה ארוך ומשתנה. הרמות שונות מאוד, ולכן התוכן והמראה מותאמים לגיל.</p>
+<p><b>הבעיה, לפי המשפחה</b> (<span class="fill">להוסיף ציטוט ישיר ומי דיבר</span>):</p>
+<ul>
+  <li><b>שיעורי בית:</b> היא לא יכולה לעשות אותם לבד.</li>
+  <li><b>למידה:</b> אין כלי שמלמד אותה בקצב שלה ומודד את רמת הידע שלה, ולכן אף אחד לא יודע כמה היא באמת יודעת.</li>
+  <li><b>בכיתה</b> (המשך עתידי): כדי לשאול ולענות מהר היא צריכה סייעת.</li>
+  <li><b>להיות עם אחרים</b> (המשך עתידי): ההורים לא רוצים שתהיה מבודדת.</li>
+</ul>
+<p><b>פערים שהאתגר מציין:</b> אין תוכן לימודי לקלט מוגבל, אין הבחנה בין ״לא יודעת״ ל״לא הצליחה לבחור״, ואין דרך להראות מה הילדה יודעת בפועל.</p>
+
+<h2>2. הפתרון</h2>
+
+<h3>א. לוז שנתי שמתאים את עצמו</h3>
+<p>המערכת בונה לוז שנתי משבועי ויומי מתוכנית הלימודים של משרד החינוך, מלוח השנה ומהרמה של הילדה. כשהיא חולה או עייפה היא מזיזה יעדים, וכשהיא מתקדמת מהר היא מקדימה. כל שינוי מוסבר במשפט אחד.</p>
+
+<h3>ב. מורה AI על בסיס מקורות מהימנים</h3>
+<ul>
+  <li><b>מקורות:</b> תוכניות לימודים וחומרי משרד החינוך, קמפוס IL <span class="fill">לאמת זכויות שימוש</span>, ומקורות מאושרים. המורה עונה רק מהם, ומציין מקור. אם אין תשובה הוא אומר ״אני לא יודע״ ומעביר לאדם.</li>
+  <li><b>מקטעים:</b> נושא מתפרק למקטעים של כ-10 דקות. בסוף כל מקטע: שאלה, עידוד ספציפי, ושתיים-שלוש שאלות אמריקאיות עם אפשרות דילוג (דילוג לא נספר כטעות).</li>
+  <li><b>מבחן רמה בסוף הנושא:</b> מבחן אדפטיבי שמתחיל בשאלה קלה, אחריה קשה, וכך הלאה עד שנמצאת הרמה.</li>
+  <li><b>לא ברצף:</b> אי אפשר לעשות מבחן רמה פעמיים ברצף. אם היא רוצה שוב, המורה מציע הפסקה, נושא אחר או חיזוק, ואז שאלות שונות.</li>
+  <li><b>לא נספר כטעות:</b> תשובה לא ברורה, לפי זמן ושינויי בחירה, נשאלת שוב בפחות אפשרויות. זה לא אבחון קוגניטיבי רשמי.</li>
+</ul>
+
+<h3>ג. לוח מילים מותאם</h3>
+<p>זו הדרך שלה לדבר עם המורה. ה-AI בונה את הלוח לפי מה שנלמד באותו רגע, כדי שתגיב מהר ובלי להתעייף.</p>
+<div class="tablewrap"><table>
+  <tr><th>מתי</th><th>מה בלוח</th></tr>
+  <tr><td>בזמן הסבר</td><td>הבנתי · לא הבנתי · עוד פעם · לאט יותר · דוגמה · הפסקה</td></tr>
+  <tr><td>אחרי ״לא הבנתי״</td><td>ההסבר מוצג במשפטים ממוספרים. היא בוחרת איזה משפט לא היה ברור, והמורה מסביר רק אותו, בנוסח אחר.</td></tr>
+  <tr><td>רוצה לשאול</td><td>הצעות לשאלות ומונחים מהמקטע (״מה זה...?״, ״למה...?״)</td></tr>
+  <tr><td>אחרי שאלה</td><td>2–4 תשובות, וגם ״לא בטוחה״, ״דלג״ ו״תחזור על השאלה״</td></tr>
+</table></div>
+<div class="board">
+  <span class="strip">לא הבנתי ▮</span>
+  <span class="core">כן</span><span class="core">לא</span><span class="core">עוד פעם</span><span class="core">שאלה</span>
+  <span>דוגמה</span><span>לאט יותר</span><span>דלג</span><span>הפסקה</span>
+</div>
+<p><b>צמצום עייפות:</b> בחירה אחת או שתיים לכל פעולה; האפשרויות הרלוונטיות ביותר קודם; שורת ליבה קבועה לשמירה על זיכרון מוטורי; זיהוי עייפות לפי זמני בחירה והצעת הפסקה. <b>היא בוחרת, לא המחשב:</b> כל אפשרות היא הצעה, והלוג מבדיל בין מה שנבחר לבין מה שהוצע. המערכת מחכה לקצב שלה.</p>
+
+<h3>ד. דוחות למורה ולהורים</h3>
+<ul>
+  <li><b>לוג שאלות:</b> כל שאלה, מה בחרה, נכון או לא, דילוג, זמן בחירה וסיווג (תקינה / לא ברורה / ללא תשובה).</li>
+  <li><b>מבחן רמה:</b> רמה, טווח ורמת ביטחון, והאם הנושא מתאים לרמה.</li>
+  <li><b>סטטיסטיקות ואינדיקטורים:</b> שליטה לפי יעד, מגמה, זמן למידה, מספר ״לא הבנתי״ ודילוגים, כיסוי הלוז, ובצבעים (ירוק, צהוב, אדום) עם הסבר.</li>
+</ul>
+
+<h3>מי משתמש</h3>
+<p>הילדה לומדת במבט. ההורה והמורה מאשרים תוכן ורואים דוחות. הסייעת מכווננת את המכשיר.</p>
+
+<h3>יום אחד בבית</h3>
+<table>
+  <tr><th>שעה</th><th>מה קורה</th></tr>
+  <tr><td>09:00</td><td>נושא שברים בכיתה ו׳. המורה AI מלמד מקטע של 10 דקות, בשלושה משפטים קצרים עם הקראה.</td></tr>
+  <tr><td>09:07</td><td>היא בוחרת ״לא הבנתי״, אחר כך את משפט 2. המורה מסביר רק אותו, עם איור.</td></tr>
+  <tr><td>09:10</td><td>שאלה, עידוד ספציפי ושלוש שאלות אמריקאיות. היא מדלגת על אחת. המערכת מזהה עייפות ומציעה הפסקה.</td></tr>
+  <tr><td>09:40</td><td>מבחן רמה: רמה 4 מתוך 7. היא רוצה לנסות שוב מיד, והמורה מציע הפסקה, נושא אחר או חיזוק.</td></tr>
+  <tr><td>ערב</td><td>ההורים רואים לוג שאלות, שליטה לפי יעד, ובאילו משפטים נתקעה.</td></tr>
+</table>
+
+<h2>3. במה הפתרון שונה</h2>
+<div class="tablewrap"><table>
+  <tr><th>מה קיים</th><th>מה חסר</th><th>מה אנחנו מוסיפים</th></tr>
+  <tr><td>מכשירי תקשורת במבט ולוחות מילים</td><td>לוחות סטטיים, לא קשורים ללמידה</td><td class="us">לוח שנבנה בזמן הלמידה</td></tr>
+  <tr><td>תוכנות תרגול במבט</td><td>נעצרות ברמה בסיסית, בלי תוכנית לפי גיל</td><td class="us">למידה לפי תוכנית משרד החינוך, א׳–י״ב</td></tr>
+  <tr><td>תוכן משרד החינוך וקמפוס IL</td><td>לא נגישים לקלט מוגבל</td><td class="us">מורה AI שמלמד מהם ומותאם לילדה</td></tr>
+  <tr><td>מורים וירטואליים כלליים</td><td>מניחים הקלדה, לא תלויים במקורות סגורים</td><td class="us">בחירה במבט ותשובות ממקורות בלבד</td></tr>
+  <tr><td>בחינות אמריקאיות</td><td>לא מבדילות ״לא יודעת״ מ״לא הצליחה לבחור״</td><td class="us">מבחן רמה אדפטיבי ודוחות מפורטים</td></tr>
+</table></div>
+
+<h2>4. ארכיטקטורה</h2>
+<div class="flow">
+  <div class="node"><b>מקורות מאושרים</b>משרד החינוך, קמפוס IL</div><span class="arrow">←</span>
+  <div class="node"><b>מאגר ידע</b>מקטעים ויעדים, עם מקור</div><span class="arrow">←</span>
+  <div class="node"><b>מורה AI</b>לוז, הסברים, שאלות, לוח מילים</div><span class="arrow">←</span>
+  <div class="node"><b>מסך הילדה</b>מבט, מתג או מגע</div><span class="arrow">←</span>
+  <div class="node"><b>מנוע רמה ודוחות</b>רמה, עייפות, אינדיקטורים</div>
+</div>
+<table>
+  <tr><th>רכיב</th><th>איפה</th></tr>
+  <tr><td>בחירה במבט, זמן המתנה</td><td>במכשיר</td></tr>
+  <tr><td>מורה AI (שליפה ממאגר סגור ובדיקת מקור), מחולל לוח ושאלות, מבחן רמה, דוחות</td><td>ענן</td></tr>
+  <tr><td>הקראה בעברית</td><td>מכשיר או ענן</td></tr>
+</table>
+<p><b>פרטיות:</b> אין שמע ואין מיקרופון. נשמרים רק נתוני הלמידה, מוצפנים, עם גישה לפי תפקיד והסכמת הורים. ספקי ה-AI בלי אימון ושמירה <span class="fill">לאמת</span>. עמידה בחוק הגנת הפרטיות <span class="fill">לאמת עם יועץ משפטי</span>.</p>
+
+<h2>5. כתב כמויות</h2>
+<p>שער המרה <span class="fill">להשלים</span> · תאריך בדיקה <span class="fill">להשלים</span> · לכל שורה נדרשים קישור למוצר וקישור למחיר.</p>
+<div class="tablewrap"><table>
+  <tr><th>רכיב</th><th>יצרן ודגם</th><th>תפקיד</th><th>כמות</th><th>מחיר (מטבע מקור)</th><th>מחיר (₪)</th><th>סה״כ (₪)</th><th>קישור</th></tr>
+  <tr><td>מחשב נייד 15.6״</td><td><span class="fill">לאמת</span></td><td>מכשיר הילדה</td><td>1</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>עוקב מבט</td><td><span class="fill">לאמת</span></td><td>קלט מבט</td><td>1</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>מתג (גיבוי)</td><td><span class="fill">לאמת</span></td><td>קלט חלופי</td><td>1</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>מעמד</td><td><span class="fill">לאמת</span></td><td>מיקום מול העיניים</td><td>1</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>API מודל שפה</td><td><span class="fill">לאמת</span></td><td>מורה, לוח ושאלות</td><td>חודשי</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>הקראה בעברית</td><td><span class="fill">לאמת</span></td><td>הקראה</td><td>חודשי</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>אחסון ומאגר</td><td><span class="fill">לאמת</span></td><td>מקורות ונתונים</td><td>חודשי</td><td></td><td></td><td></td><td></td></tr>
+</table></div>
+<p>יש לסמן רכיבים עם אספקה מעל 4 שבועות או ספק יחיד (בעיקר עוקב המבט).</p>
+
+<h2>6. חישוב עלויות</h2>
+<table>
+  <tr><th>מספר</th><th>חישוב</th><th>ערך</th></tr>
+  <tr><td>פיתוח לשלב הבנייה</td><td>שעות: לוז, מורה AI ומאגר, לוח, קלט וכיול, מבחן רמה, דוחות, פיילוט</td><td><span class="fill">להשלים</span></td></tr>
+  <tr><td>יחידה אחת שעובדת</td><td><span dir="ltr">laptop + eye tracker + stand + switch + setup</span></td><td><span class="fill">להשלים</span></td></tr>
+  <tr><td>לכל מטופלת לשנה</td><td><span dir="ltr">unit / years + AI + TTS + hosting</span></td><td><span class="fill">להשלים</span></td></tr>
+</table>
+<p>העלות נמוכה כי אין זיהוי דיבור, התוכן נבנה פעם אחת ומשרת בנות רבות, ורוב הציוד לעיתים כבר בבעלות המשפחה. העלות החוזרת העיקרית היא מודל השפה <span class="fill">לאמת</span>.</p>
+
+<h2>7. בדיקת ההשפעה</h2>
+<table>
+  <tr><th>מדד</th><th>היום</th><th>פיילוט</th><th>הצלחה</th></tr>
+  <tr><td><b>התקדמות לפי תוכנית:</b> יעדים שהושגו בקצב משרד החינוך</td><td>אין מדידה</td><td>5 משפחות, 8–12 שבועות, מפת ידע ומבחני רמה</td><td><span class="fill">לקבוע עם קלינאים</span></td></tr>
+  <tr><td><b>למידה עצמאית:</b> זמן למידה ונושאים שהושלמו בלי סייעת</td><td>בסיס משבועיים <span class="fill">להשלים</span></td><td>יומן מערכת ותצפית</td><td>עלייה ברורה <span class="fill">לקבוע יעד</span></td></tr>
+</table>
+
+<h2>8. הדרך לשלב הבנייה והאינטגרציה</h2>
+<p><b>נדרש:</b> מסמך זה עם כתב כמויות מאומת; אישור שימוש בחומרי משרד החינוך וקמפוס IL; גישה למודל שפה והקראה בעברית; 5 משפחות, מורה לחינוך מיוחד וקלינאית תקשורת; עוקב מבט ומחשב.</p>
+<table>
+  <tr><th>סיכון</th><th>התמודדות</th></tr>
+  <tr><td><b>1. דיוק המורה AI וזכויות על התוכן</b></td><td>תשובות רק מהמאגר המאושר, עם מקור; חסימה כשאין תמיכה; ביקורת מורה על כל יחידה ושאלה; בירור זכויות מראש.</td></tr>
+  <tr><td><b>2. בחירה במבט, לוח מתאים ועייפות</b></td><td>כפתורים גדולים, זמן המתנה מתכוונן, מתג כגיבוי, שורת ליבה קבועה, מקטעים קצרים עם הפסקות, תכנון הלוח עם קלינאית תקשורת.</td></tr>
+  <tr><td><b>3. היקף א׳–י״ב</b></td><td>הארכיטקטורה כללית, אבל אב הטיפוס והפיילוט לקבוצת גיל אחת ולשני מקצועות <span class="fill">להחליט</span>, כנדרש באתגר.</td></tr>
+</table>
+
+<h2>9. שאלות פתוחות</h2>
+<ul>
+  <li><b>צוות:</b> איזו קבוצת גיל ואילו שני מקצועות? האם להשאיר שיעורי בית מהמורה? מה אורך המקטע וכמה זמן לחכות לפני מבחן חוזר?</li>
+  <li><b>משפחות:</b> איזה לוח היא משתמשת בו היום? כמה זמן היא מתרכזת במסך? מה רמת הקריאה שלה?</li>
+  <li><b>קלינאים ומורים:</b> איזו פריסה וגודל כפתורים מתאימים? כמה שאלות במקטע לפני עייפות?</li>
+  <li><b>ספקים ומשרד החינוך:</b> אילו חומרים פתוחים לשימוש ובאילו תנאים? מחירי מודל שפה והקראה ותנאי פרטיות.</li>
+</ul>
+
+<h2>10. פיתוח עתידי</h2>
+<p><b>מצב כיתה:</b> אותו לוח מילים בלימודים פיזיים בכיתה. המערכת יודעת מהלוז מה הכיתה לומדת, מכינה לילדה מראש שאלות ותגובות אפשריות, והמורה רואה ״יד מורמת״ והודעה. אין הקלטה או תמלול. זה עונה על הצורך לשאול מהר בכיתה ולא להיות מבודדת. בהמשך גם: מחלות ושפות נוספות, וחיבור למערכות בית הספר.</p>
+
+<footer>טיוטה · לא להגשה לפני השלמת כל השדות המסומנים</footer>
+</div>
+</body>
+</html>
