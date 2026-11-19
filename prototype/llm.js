@@ -49,7 +49,7 @@ async function suggest({ lines, keywords, lang = 'English' }) {
   const ac = new AbortController(); inflight = ac;
   const t0 = performance.now();
   const c = await getClient().catch(() => null);
-  if (!c) return { ...mock(lines, keywords), ms: Math.round(performance.now() - t0), source: 'mock' };
+  if (!c) return { ...(lang === 'Hebrew' ? mockHe : mock)(lines, keywords), ms: Math.round(performance.now() - t0), source: 'mock' };
 
   const model = LLM.model;
   const params = {
@@ -74,7 +74,7 @@ async function suggest({ lines, keywords, lang = 'English' }) {
     if (Anthropic && e instanceof Anthropic.AuthenticationError) why = 'invalid API key';
     else if (Anthropic && e instanceof Anthropic.RateLimitError) why = 'rate limited';
     else if (Anthropic && e instanceof Anthropic.APIConnectionError) why = 'no connection';
-    return { ...mock(lines, keywords), ms: Math.round(performance.now() - t0), source: 'mock', error: why };
+    return { ...(lang === 'Hebrew' ? mockHe : mock)(lines, keywords), ms: Math.round(performance.now() - t0), source: 'mock', error: why };
   } finally { if (inflight === ac) inflight = null; }
 }
 
@@ -108,6 +108,47 @@ function mock(lines, keywords) {
   if (kw.includes('no')) s.push(`No, I don't think so.`);
   if (kw.includes("i don't know")) s.push(`I don't know. Can you explain ${topic} again?`);
   s.push(`I think ${topic} is interesting.`, `Can you tell me more about ${topic}?`, `I like ${topic}.`);
+  return { words, sentences: [...new Set(s)].slice(0, 3) };
+}
+
+/* Hebrew mock: words from the transcript with common prefixes (ו, ה, ב, ל…) peeled off when that
+   leaves a known lesson word, and first-person sentences in the feminine (Noa is a girl). */
+const HE_LEX = new Set(`טירה טירות אביר אבירים סוס סוסים שריון מלך מלכה חקלאי חקלאים חיטה פרות כבשים תרנגולות חרב מגן לחם אופה מגדל מגדלים גשר זחיח חומה חומות מתכת ספר לארוג בד לאפות עבודה לצייר חווה אירופה ימי_הביניים`.split(/\s+/));
+const HE_PREFIX = ['וה', 'וב', 'ול', 'ומ', 'שה', 'מה', 'בה', 'לה', 'ה', 'ו', 'ב', 'ל', 'מ', 'ש', 'כ'];
+const HE_STOPS = typeof STOP_HE !== 'undefined' ? STOP_HE : new Set();
+const FOLLOW_HE = {
+  'המורה': ['שאלה', 'עזרה', 'שירותים', 'שוב', 'מים', 'הפסקה', 'תראי לי'],
+  'לשאול': ['שאלה', 'למה', 'איך', 'מה', 'עוד'],
+  'אני רוצה': ['להיות', 'עזרה', 'עוד', 'הפסקה', 'מים', 'לשחק', 'לצייר'],
+  'אני לא יודעת': ['עזרה', 'שוב', 'להסביר', 'עוד פעם'],
+};
+function heWord(w) {
+  if (HE_LEX.has(w)) return w;
+  for (const p of HE_PREFIX) if (w.startsWith(p) && HE_LEX.has(w.slice(p.length))) return w.slice(p.length);
+  return w;
+}
+function topicWordsHe(lines) {
+  const score = {};
+  lines.slice(-8).forEach((l, li) => (l.text.replace(/ימי הביניים/g, 'ימי_הביניים').match(/[א-ת_]+/g) || []).forEach(raw => {
+    const w = heWord(raw);
+    if (w.length < 2 || HE_STOPS.has(w) || HE_STOPS.has(raw)) return;
+    score[w] = (score[w] || 0) + 1 + li / 8 + (HE_LEX.has(w) ? 2 : 0);
+  }));
+  return Object.entries(score).sort((a, b) => b[1] - a[1]).map(e => e[0].replace('_', ' '));
+}
+function mockHe(lines, keywords) {
+  const kw = keywords, last = kw[kw.length - 1];
+  const words = [...new Set([...(FOLLOW_HE[last] || []), ...topicWordsHe(lines)])].filter(w => !kw.includes(w)).slice(0, 18);
+  if (!kw.length) return { words, sentences: [] };
+  const content = kw.filter(k => !['המורה', 'לשאול', 'אני רוצה', 'כן', 'לא', 'אני לא יודעת', 'שאלה'].includes(k));
+  const topic = content.join(' ') || topicWordsHe(lines)[0] || 'זה';
+  const s = [];
+  if (kw.includes('לשאול') || kw.includes('שאלה')) s.push(`${kw.includes('המורה') ? 'המורה, אפשר' : 'אפשר'} לשאול שאלה על ${topic}?`);
+  if (kw.includes('אני רוצה')) s.push(content.length ? `אני רוצה להיות ${topic}.` : 'אני רוצה משהו.');
+  if (kw.includes('כן')) s.push(`כן, אני יודעת על ${topic}.`);
+  if (kw.includes('לא')) s.push('לא, אני לא חושבת.');
+  if (kw.includes('אני לא יודעת')) s.push(`אני לא יודעת. אפשר להסביר שוב על ${topic}?`);
+  s.push(`אני חושבת ש${topic} מעניין.`, `אפשר לספר לי עוד על ${topic}?`, `אני אוהבת ${topic}.`);
   return { words, sentences: [...new Set(s)].slice(0, 3) };
 }
 

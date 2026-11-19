@@ -61,15 +61,15 @@ function renderQuizIntro(){
   quiz.runId = (quiz.runId||0)+1; quiz.active=false;
   const n = bank.length;
   $('#quizBox').innerHTML = `<div class="report">
-    <div class="qtext" style="text-align:left">Level check</div>
+    <div class="qtext" style="text-align:start">Level check</div>
     <p style="color:var(--muted);margin:0">${n?`${n} approved questions ready.`:`No approved homework questions yet, so the synthetic bank (24 items, 4 topics, difficulty 1–7) will be used.`}
     Difficulty adapts as she answers, and every answer is graded on <b>how cleanly it was selected</b>. Hesitations get re-asked, and no-response never counts as wrong.</p>
-    <div class="big dw" id="startQ" style="width:320px">▶ Start (you play)</div>
+    <div class="big dw" id="startQ" style="width:320px">${ic('play')}&nbsp;Start (you play)</div>
     <div class="nav-label" style="padding-left:0">Simulate a synthetic student</div>
     <div class="profiles">${PROFILES.map((p,i)=>`<div class="kpi">
       <b style="font-size:16px">${p.name}</b><small>${p.desc}</small>
       <div class="hint mono" style="margin:6px 0">true ability · ${TOPICS.map(t=>`${t.slice(0,4)} ${p.ab[t]}`).join(' · ')}</div>
-      <div class="acts" style="display:flex;gap:8px"><button class="btn primary" data-p="${i}" data-m="watch">▶ Watch it play</button><button class="btn" data-p="${i}" data-m="instant">⚡ Instant report</button></div>
+      <div class="acts" style="display:flex;gap:8px"><button class="btn primary" data-p="${i}" data-m="watch">${ic('play')} Watch it play</button><button class="btn" data-p="${i}" data-m="instant">${ic('zap')} Instant report</button></div>
     </div>`).join('')}</div></div>`;
   $('#startQ').onclick = ()=>startQuiz(null);
   $('#quizBox').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>startQuiz(PROFILES[b.dataset.p], b.dataset.m));
@@ -104,7 +104,7 @@ function showQ(q, retry){
   $('#quizBox').innerHTML = `<div class="qmeta">${quiz.sim?`<span class="pill">SIMULATED · ${quiz.sim.name}</span>`:''}<span>Item ${quiz.i}${retry?' · re-ask with fewer options':''}</span><span>${q.topic||''}</span><span>difficulty ${q.diff}</span><span>level estimate <b>${quiz.level}</b></span><span id="simT"></span></div>
     <div class="qtext">${q.q}</div>
     <div class="opts" style="grid-template-columns:repeat(${opts.length},1fr)">${opts.map(o=>`<div class="big dw" data-o="${o}">${o}</div>`).join('')}</div>
-    <div style="display:flex;gap:12px"><div class="big dw" id="noresp" style="min-height:50px;font-size:15px;width:260px;opacity:.7">😴 Need a break / skip</div>
+    <div style="display:flex;gap:12px"><div class="big dw" id="noresp" style="min-height:50px;font-size:15px;width:260px;opacity:.7">${ic('moon')}&nbsp;Need a break / skip</div>
     ${quiz.sim?`<button class="btn" id="skipRep">⏭ Skip to report</button>`:''}</div>`;
   if(quiz.sim){ $('#skipRep').onclick=instantRest; autoplay(q,opts,retry,run); return; }
   $('#quizBox').querySelectorAll('[data-o]').forEach(el=>{
@@ -201,7 +201,7 @@ function finish(){
   });
   log('quiz.report',`level ${quiz.level} · ${verdict} · ${valid.length} valid of ${quiz.hist.length} · stop: ${quiz.stop}`);
   $('#quizBox').innerHTML = `<div class="report">
-    <div class="qtext" style="text-align:left">Report for teacher & parents</div>
+    <div class="qtext" style="text-align:start">Report for teacher & parents</div>
     ${quiz.sim?`<div class="hint"><span class="pill">SIMULATED</span> ${quiz.sim.name}. Green marks show the synthetic student's <b>true</b> ability, so you can see how well the quiz recovered it.</div>`:''}
     <div class="kpis">
       <div class="kpi"><small>Level estimate</small><b>${quiz.est.toFixed(1)} / 7</b><small>±1 · ${conf} confidence${quiz.sim?` · <span style="color:var(--ok)">true ${meanAb(quiz.sim).toFixed(1)}</span>`:''}</small></div>

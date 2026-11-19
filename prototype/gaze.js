@@ -3,6 +3,7 @@
 const MP = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
 const MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
 const LS_CAL = 'rettina.calib';
+const t = (k, v) => (window.t ? window.t(k, v) : k);
 
 const G = {
   mode: 'mouse',            // 'mouse' | 'gaze' | 'head'
@@ -20,19 +21,19 @@ const status = (s) => { const el = document.getElementById('gazeStat'); if (el) 
 /* ---------------- camera + model ---------------- */
 async function ensureRunning() {
   if (G.running) return;
-  status('loading face model…');
+  status(t('gz.loading'));
   const { FaceLandmarker, FilesetResolver } = await import(`${MP}/vision_bundle.mjs`);
   const files = await FilesetResolver.forVisionTasks(`${MP}/wasm`);
   G.landmarker = await FaceLandmarker.createFromOptions(files, {
     baseOptions: { modelAssetPath: MODEL, delegate: 'GPU' },
     runningMode: 'VIDEO', numFaces: 1,
   });
-  status('waiting for camera permission…');
+  status(t('gz.perm'));
   G.stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' }, audio: false });
   G.video = Object.assign(document.createElement('video'), { muted: true, playsInline: true, srcObject: G.stream });
   await G.video.play();
   G.running = true;
-  status('camera on');
+  status(t('gz.on'));
   requestAnimationFrame(tick);
 }
 function stopCamera() {
@@ -108,9 +109,9 @@ function steer() {
   const d = dot();
   if (G.mode === 'mouse' || G.collecting) { d.style.display = 'none'; return; }
   const m = G.cal?.[G.mode];
-  if (!m) { status('needs calibration'); d.style.display = 'none'; return; }
+  if (!m) { status(t('gz.needCal')); d.style.display = 'none'; return; }
   if (!G.feat || performance.now() - G.lastFace > 400) {
-    status('face not found'); d.classList.add('lost'); window.Dwell.gazeTarget(null); return;
+    status(t('gz.noFace')); d.classList.add('lost'); window.Dwell.gazeTarget(null); return;
   }
   d.classList.remove('lost');
   let [x, y] = predict(m, design[G.mode](G.feat));
@@ -123,7 +124,7 @@ function steer() {
   d.style.display = 'block';
   d.style.left = G.pt[0] + 'px'; d.style.top = G.pt[1] + 'px';
   window.Dwell.gazeTarget(snap(G.pt[0], G.pt[1]));
-  status(`${G.mode === 'gaze' ? 'eye gaze' : 'head pointer'} · ±${G.cal.err?.[G.mode] ?? '?'}px`);
+  status(`${t(G.mode === 'gaze' ? 'gz.eye' : 'gz.head')} · ±${G.cal.err?.[G.mode] ?? '?'}px`);
 }
 
 /* snap to the nearest selectable tile, with hysteresis so the target doesn't flicker */
@@ -151,7 +152,7 @@ async function calibrate() {
   ov.classList.add('on'); let cancelled = false;
   const onKey = e => { if (e.key === 'Escape') cancelled = true; };
   addEventListener('keydown', onKey);
-  msg.innerHTML = 'Look at each dot until it shrinks. Keep your head comfortable and still.<br><small>Esc to cancel</small>';
+  msg.innerHTML = t('cal.look');
   const W = innerWidth, H = innerHeight, mx = 70, my = 70;
   const grid = [[.5, .5], [0, 0], [.5, 0], [1, 0], [1, .5], [1, 1], [.5, 1], [0, 1], [0, .5]]
     .map(([u, v]) => [mx + u * (W - 2 * mx), my + v * (H - 2 * my)]);
@@ -172,7 +173,7 @@ async function calibrate() {
     G.cal = { err: {} };
     for (const mode of ['gaze', 'head']) G.cal[mode] = fit(samples.map(s => design[mode](s.f)), samples.map(s => s.p), mode === 'gaze' ? 2 : 1);
     // quick validation on 4 new points
-    msg.innerHTML = 'Checking accuracy… keep looking at the dots.';
+    msg.innerHTML = t('cal.check');
     const test = [[.3, .3], [.7, .3], [.7, .7], [.3, .7]].map(([u, v]) => [u * W, v * H]);
     const errs = { gaze: [], head: [] };
     for (const p of test) {
@@ -185,9 +186,9 @@ async function calibrate() {
     save();
     const deg = px => (Math.atan(px / 45 / 55) * 180 / Math.PI).toFixed(1);   // ≈45 css px/cm, 55 cm viewing distance
     window.rettinaLog?.('gaze.calibrate', `${samples.length} samples · median error eye ${G.cal.err.gaze}px (≈${deg(G.cal.err.gaze)}°) · head ${G.cal.err.head}px (≈${deg(G.cal.err.head)}°)`);
-    msg.innerHTML = `<b>Calibrated.</b> Median error: eye gaze ${G.cal.err.gaze}px (≈${deg(G.cal.err.gaze)}°), head pointer ${G.cal.err.head}px (≈${deg(G.cal.err.head)}°).<br><small>Targets are ~140px+, snapping covers the rest.</small>`;
+    msg.innerHTML = t('cal.done', { g:G.cal.err.gaze, gd:deg(G.cal.err.gaze), h:G.cal.err.head, hd:deg(G.cal.err.head) });
     await sleep(2600);
-  } else if (!cancelled) { msg.textContent = 'Could not see a face clearly. Check lighting and try again.'; await sleep(2200); }
+  } else if (!cancelled) { msg.textContent = t('cal.noFace'); await sleep(2200); }
   removeEventListener('keydown', onKey);
   ov.classList.remove('on'); pt.classList.remove('shrink');
 }
@@ -197,7 +198,7 @@ function drawPreview(lm) {
   const c = document.getElementById('camPreview'), ctx = c.getContext('2d');
   ctx.save(); ctx.scale(-1, 1); ctx.drawImage(G.video, -c.width, 0, c.width, c.height); ctx.restore();
   if (!lm) { ctx.fillStyle = '#c23b3bcc'; ctx.fillRect(0, c.height - 22, c.width, 22); ctx.fillStyle = '#fff'; ctx.font = '12px sans-serif'; ctx.fillText('no face', 8, c.height - 7); return; }
-  ctx.fillStyle = '#e0855a';
+  ctx.fillStyle = '#8b6cf0';
   for (const i of [468, 473, 33, 133, 362, 263, 1]) { const p = lm[i]; ctx.beginPath(); ctx.arc((1 - p.x) * c.width, p.y * c.height, i >= 468 ? 3 : 1.6, 0, 7); ctx.fill(); }
 }
 
@@ -206,17 +207,17 @@ window.Gaze = {
   async setMode(mode) {
     G.mode = mode; G.pt = null;
     window.Dwell.source = mode;
-    if (mode === 'mouse') { status('off'); window.Dwell.gazeTarget(null); return; }
+    if (mode === 'mouse') { status(t('gz.off')); window.Dwell.gazeTarget(null); return; }
     try {
       await ensureRunning();
       if (!G.cal?.[mode]) await calibrate();
     } catch (e) {
-      status('camera error: ' + (e.name || e.message));
+      status(t('gz.err') + (e.name || e.message));
       window.rettinaLog?.('gaze.error', e.message || e.name);
       throw e;
     }
   },
-  calibrate: () => calibrate().catch(e => status('camera error: ' + (e.name || e.message))),
+  calibrate: () => calibrate().catch(e => status(t('gz.err') + (e.name || e.message))),
   setPreview(on) { G.preview = on; document.getElementById('camPreview').style.display = on ? 'block' : 'none'; if (on) ensureRunning().catch(() => {}); },
   setSnap(px) { G.snapPx = px; },
   stop: stopCamera,
