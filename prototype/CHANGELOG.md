@@ -18,6 +18,23 @@ To compare without git: in Noa's mode press **Layout: Frame / Classic** in the t
 
 ---
 
+## 2026-11-19 · Fix: webcam eye tracking in the frame layout
+
+**Symptom:** with real webcam eye gaze, tiles in the frame were hard or impossible to select, although tracking used to work.
+
+**Causes and fixes**
+1. **The quiet zone swallowed gaze aimed at the edges.** Webcam gaze estimates drift toward the middle of the screen, and the frame's large quiet centre turned off snapping, so a look at an edge tile often selected nothing. *Fix:* only the core of a quiet zone is quiet. A band as wide as the snap radius (at least 80 px) along its edge still snaps to the nearest edge tile (`gaze.js` `snap`). Checked: gaze 40–110 px inside the centre reaches Next and Today; the deep centre stays quiet.
+2. **A tile that replaced the one just chosen could stay blocked.** With gaze, snapping keeps the eyes "on" that spot, so a new Next in the same corner was ignored until the eyes went to another tile. *Fix:* for gaze, such a tile is released 1.2 s after it appears (`index.html` `setTarget`). A tile that was itself chosen still needs a look away, as before.
+3. **Found while testing: resting the eyes on the forward corner during a question could answer it with no second look.** Snapping picked the nearest answer, then the ✓ appeared under the eyes and confirmed. *Fix:* a fresh ✓ (`data-fresh`) can't be selected until the gaze point has left a 60 px area around it, based on the actual gaze position, so a one-frame snap wobble can't bypass it. Applies to both layouts. Checked: 5 s of staring marks an answer but doesn't confirm; looking away and back confirms.
+
+**Also added:** `Dwell.point` (current gaze or mouse position) and a test hook `Gaze.snapAt(x, y)`, used to check all of the above without a camera.
+
+**Files:** `gaze.js` (quiet band, `Dwell.point`, `snapAt`), `index.html` (dwell guard timing, fresh-✓ check, pointer position), `lesson.js` (✓ marked `data-fresh`).
+
+**Undo just this:** `git revert <this commit>`.
+
+---
+
 ## 2026-11-19 · Sources: Ministry of Education library + parent file uploads
 
 **Why:** the team wants lessons grounded in official curriculum material; parents also need a way to add the school's own worksheets and custom files as context.

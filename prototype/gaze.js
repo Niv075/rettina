@@ -123,6 +123,7 @@ function steer() {
   G.pt = [G.pt[0] + a * (x - G.pt[0]), G.pt[1] + a * (y - G.pt[1])];
   d.style.display = 'block';
   d.style.left = G.pt[0] + 'px'; d.style.top = G.pt[1] + 'px';
+  window.Dwell.point = { x: G.pt[0], y: G.pt[1] };
   window.Dwell.gazeTarget(snap(G.pt[0], G.pt[1]));
   status(`${t(G.mode === 'gaze' ? 'gz.eye' : 'gz.head')} · ±${G.cal.err?.[G.mode] ?? '?'}px`);
 }
@@ -130,10 +131,13 @@ function steer() {
 /* snap to the nearest selectable tile, with hysteresis so the target doesn't flicker */
 let snapped = null;
 function snap(x, y) {
-  /* quiet zones (reading area): looking there selects nothing and never snaps to a nearby tile */
+  /* quiet zones (reading area): only the CORE of the zone is quiet. Webcam gaze estimates drift inward,
+     so a band as wide as the snap radius along the zone's edge still snaps to the edge tiles. */
+  const band = Math.max(80, G.snapPx);
   for (const q of document.querySelectorAll('.quiet')) {
     const r = q.getBoundingClientRect();
-    if (r.width && getComputedStyle(q).visibility !== 'hidden' && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) { snapped = null; return null; }
+    if (r.width && getComputedStyle(q).visibility !== 'hidden' &&
+        x >= r.left + band && x <= r.right - band && y >= r.top + band && y <= r.bottom - band) { snapped = null; return null; }
   }
   const modal = document.querySelector('#modal.on, #calib.on');
   const scope = modal || document;
@@ -225,6 +229,7 @@ window.Gaze = {
   calibrate: () => calibrate().catch(e => status(t('gz.err') + (e.name || e.message))),
   setPreview(on) { G.preview = on; document.getElementById('camPreview').style.display = on ? 'block' : 'none'; if (on) ensureRunning().catch(() => {}); },
   setSnap(px) { G.snapPx = px; },
+  snapAt: (x, y) => { window.Dwell.point = { x, y }; return snap(x, y); },          // test hook: which tile would the gaze point (x, y) select?
   stop: stopCamera,
 };
 window.dispatchEvent(new Event('gaze-ready'));

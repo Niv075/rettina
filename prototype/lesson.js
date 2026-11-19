@@ -508,14 +508,14 @@ function choose(i){
   const o = esc(m.s.options[i]);
   if(L.frame){
     /* the ✓ always appears in the same forward corner */
-    setFwd(`<div class="fz dw fr-tile fr-go ok cf on" data-cf="${i}">${ic('check')}<b>${tr('Yes, this one','כן, את זאת')}</b><small>“${o}”</small></div>`);
+    setFwd(`<div class="fz dw fr-tile fr-go ok cf on" data-cf="${i}" data-fresh="1">${ic('check')}<b>${tr('Yes, this one','כן, את זאת')}</b><small>“${o}”</small></div>`);
     $('#frFwd [data-cf]').onclick = () => commit(i);
     hint(tr(`You picked <b>“${o}”</b>. Look at ✓ to lock it in, or look at another answer.`, `בחרת <b>"${o}"</b>. תסתכלי על ✓ כדי לנעול, או על תשובה אחרת.`));
     say(m.s.options[i], true);
     log('lesson.choose', `“${m.s.options[i]}”${m.rev?` (changed ${m.rev}×)`:''} · waiting for ✓ (frame)`);
     return;
   }
-  act.querySelectorAll('[data-cf]').forEach(el => { const on = +el.dataset.cf===i; el.classList.toggle('on', on); el.classList.toggle('dw', on); });
+  act.querySelectorAll('[data-cf]').forEach(el => { const on = +el.dataset.cf===i; el.classList.toggle('on', on); el.classList.toggle('dw', on); if(on) el.dataset.fresh = '1'; });
   $('#mcqHint').innerHTML = tr(`You picked <b>“${o}”</b>. Look at ✓ to lock it in, or look at another answer.`, `בחרת <b>"${o}"</b>. תסתכלי על ✓ כדי לנעול, או על תשובה אחרת.`);
   say(m.s.options[i], true);
   log('lesson.choose', `“${m.s.options[i]}”${m.rev?` (changed ${m.rev}×)`:''} · waiting for ✓`);
