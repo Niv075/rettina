@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rettina Prototype</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --side:#efede8; --ink:#1d1c1a; --muted:#6b6862; --line:#e0ddd6;
+  --accent:#c2643a; --accent-ink:#fff; --soft:#f4e6dd; --ok:#2f8a57; --warn:#d49a12; --bad:#c23b3b;
+  --unread:#b7b3ab; --hl:#ffe08a; --code:#f1efea;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1b1a18; --panel:#242320; --side:#151413; --ink:#ece9e3; --muted:#9a968e; --line:#35332f;
+  --accent:#e0855a; --accent-ink:#1b1a18; --soft:#3a2a22; --unread:#5d5a54; --hl:#6b5414; --code:#2c2b28;
+}}
+:root[data-theme="dark"]{
+  --bg:#1b1a18; --panel:#242320; --side:#151413; --ink:#ece9e3; --muted:#9a968e; --line:#35332f;
+  --accent:#e0855a; --accent-ink:#1b1a18; --soft:#3a2a22; --unread:#5d5a54; --hl:#6b5414; --code:#2c2b28;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;overflow:hidden}
+button,select{font:inherit;color:inherit}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* ---------- harness shell ---------- */
+aside{width:260px;flex:none;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 10px;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:8px;font-weight:650;font-size:17px;padding:4px 8px 14px}
+.brand i{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 50% 50%,var(--side) 0 22%,var(--accent) 24% 100%);display:inline-block}
+.nav-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:12px 8px 6px}
+.nav button{display:flex;width:100%;align-items:center;gap:10px;text-align:left;border:0;background:none;padding:9px 10px;border-radius:8px;cursor:pointer}
+.nav button:hover{background:var(--line)}
+.nav button.on{background:var(--panel);box-shadow:0 1px 2px #0001;font-weight:600}
+.nav small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.side-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:6px;font-size:13px}
+.side-foot label,.side-foot .row{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;gap:8px}
+.side-foot select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:2px 4px;max-width:140px}
+.side-foot input[type=range]{width:96px}
+.status{display:flex;flex-direction:column;gap:3px;padding:8px;color:var(--muted);font-size:12px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px}
+.dot.mock{background:var(--warn)}
+.dot.off{background:var(--line)}
+
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header{height:52px;flex:none;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:15px;margin:0;font-weight:600}
+header .crumb{color:var(--muted);font-size:13px}
+header .sp{flex:1}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--soft);color:var(--accent);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 12px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.sm{padding:2px 9px;font-size:12px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.on{background:var(--soft);border-color:var(--accent);color:var(--accent)}
+.view{flex:1;min-height:0;display:none}
+.view.on{display:flex}
+.hint{font-size:12px;color:var(--muted)}
+
+#log{flex:none;border-top:1px solid var(--line);background:var(--panel);font-size:12px}
+#log summary{cursor:pointer;padding:6px 18px;color:var(--muted);user-select:none}
+#logBody{max-height:150px;overflow:auto;padding:0 18px 8px}
+#logBody div{padding:2px 0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#logBody b{color:var(--accent);font-weight:600}
+
+/* dwell targets */
+.dw{position:relative;overflow:hidden;cursor:pointer;user-select:none}
+.dw::after{content:"";position:absolute;left:0;bottom:0;height:6px;width:calc(var(--p,0)*100%);background:var(--accent);opacity:.85;pointer-events:none}
+.dw.gz{outline:3px solid var(--accent);outline-offset:-3px}
+.dw.fired{animation:fire .35s}
+@keyframes fire{0%{box-shadow:0 0 0 0 var(--accent)}100%{box-shadow:0 0 0 10px transparent}}
+.big{border:2px solid var(--line);background:var(--panel);border-radius:14px;min-height:76px;display:flex;align-items:center;justify-content:center;font-weight:650;font-size:18px;text-align:center;padding:8px}
+.big:hover{border-color:var(--accent)}
+
+/* gaze cursor, calibration, preview */
+#gazeDot{position:fixed;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:color-mix(in srgb,var(--accent) 35%,transparent);border:2px solid var(--accent);pointer-events:none;z-index:60;display:none;transition:left .03s linear,top .03s linear}
+#gazeDot.lost{border-style:dashed;background:transparent;opacity:.5}
+#calib{position:fixed;inset:0;background:var(--bg);z-index:55;display:none}
+#calib.on{display:block}
+#calibMsg{position:absolute;left:50%;top:50%;transform:translate(-50%,80px);text-align:center;color:var(--muted);font-size:17px;max-width:560px}
+#calibDot{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 10px var(--soft);transition:left .35s ease,top .35s ease}
+#calibDot::after{content:"";position:absolute;inset:17px;border-radius:50%;background:var(--panel)}
+#calibDot.shrink{animation:shrink linear forwards}
+@keyframes shrink{0%{transform:scale(1.4)}40%{transform:scale(1)}100%{transform:scale(.45)}}
+#camPreview{position:fixed;right:16px;bottom:40px;width:200px;height:150px;border-radius:12px;border:1px solid var(--line);z-index:30;display:none;background:#000}
+
+/* ---------- Conversation ---------- */
+#convo{gap:0}
+.c-room{width:27%;min-width:250px;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px;gap:10px}
+.c-talk{flex:1;min-width:0;display:flex;flex-direction:column;padding:14px;gap:10px}
+.rowhead{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);gap:8px}
+.rowhead b{color:var(--ink)}
+#feed{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px;padding-right:4px}
+.ln{font-size:14px;padding:6px 10px;border-radius:10px;background:var(--code)}
+.ln b{font-weight:650;margin-right:6px}
+.ln.stu{background:var(--soft);border-left:4px solid var(--accent)}
+.ln.interim{opacity:.55;font-style:italic}
+.ln.addr{box-shadow:inset 0 0 0 2px var(--warn)}
+.rec{color:var(--bad);font-weight:600}
+#kw{min-height:72px;border-radius:14px;border:2px dashed var(--line);display:flex;align-items:center;padding:8px 14px;gap:8px;flex-wrap:wrap}
+#kw:empty::before{content:"Pick a few words. Rettina finishes the sentence.";color:var(--unread)}
+#kw span{font-size:24px;font-weight:700;background:var(--soft);color:var(--accent);padding:2px 12px;border-radius:10px}
+.sents{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sent{min-height:92px;font-size:clamp(16px,1.35vw,22px);font-weight:600;justify-content:flex-start;text-align:left;padding:10px 16px;border-color:var(--accent)}
+.sent.ph{border-style:dashed;border-color:var(--line);color:var(--unread);font-weight:400;justify-content:center;text-align:center;cursor:default}
+.sent.loading{background:linear-gradient(90deg,var(--panel),var(--soft),var(--panel));background-size:200% 100%;animation:shim 1.1s infinite linear;color:transparent;border-color:var(--line)}
+@keyframes shim{to{background-position:-200% 0}}
+.wgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;flex:1;grid-auto-rows:minmax(62px,1fr)}
+.tile{border:2px solid var(--line);border-radius:12px;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:clamp(15px,1.3vw,21px);font-weight:600;padding:4px;text-align:center;word-break:break-word}
+.tile.core{background:var(--soft);border-color:transparent}
+.tile.new{animation:newin .7s}
+.tile.empty{opacity:.3;cursor:default}
+@keyframes newin{from{background:var(--hl)}}
+.ctl{display:grid;grid-template-columns:1fr 1fr 2fr;gap:8px}
+.ctl .tile{min-height:58px;background:var(--code)}
+.ctl .say{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+#savings{font-weight:600;color:var(--ok)}
+
+/* modal + toast */
+#modal{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:10}
+#modal.on{display:flex}
+#modal .card{background:var(--panel);border-radius:18px;padding:22px;width:min(640px,92vw);display:flex;flex-direction:column;gap:14px}
+#toast{position:fixed;top:64px;right:18px;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:12px;padding:12px 16px;box-shadow:0 8px 30px #0003;display:none;z-index:11;max-width:360px}
+#toast.on{display:block;animation:newin .5s}
+#toast small{color:var(--muted);display:block}
+
+/* ---------- chat (homework) ---------- */
+.chat{flex:1;display:flex;flex-direction:column;min-width:0}
+.thread{flex:1;overflow:auto;padding:24px 0}
+.msg{max-width:780px;margin:0 auto 18px;padding:0 20px;display:flex;gap:12px}
+.av{width:28px;height:28px;border-radius:8px;flex:none;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.msg.user .av{background:var(--line);color:var(--ink)}
+.msg .body{flex:1;min-width:0}
+.msg.user .body{background:var(--code);border-radius:12px;padding:10px 14px;white-space:pre-wrap}
+.tool{font-size:12.5px;background:var(--code);border:1px solid var(--line);border-radius:8px;padding:6px 10px;margin:4px 0;color:var(--muted)}
+.tool b{color:var(--ink)}
+.tool.run::after{content:" ⋯";animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.2}}
+.qcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:10px 0;background:var(--panel)}
+.qcard.ok{border-color:var(--ok)}
+.qcard.gone{opacity:.4}
+.qcard .src{font-size:12px;color:var(--muted);margin-top:6px}
+.qcard ol{margin:8px 0;padding-left:22px}
+.qcard li.c{color:var(--ok);font-weight:650}
+.qcard .acts{display:flex;gap:8px;margin-top:6px}
+.composer{max-width:780px;width:100%;margin:0 auto 18px;padding:0 20px}
+.composer .box{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:10px;box-shadow:0 2px 10px #0000000d}
+.composer textarea{width:100%;border:0;outline:0;resize:none;background:none;color:var(--ink);font:inherit;min-height:60px}
+.composer .bar{display:flex;gap:8px;align-items:center}
+.composer .bar .sp{flex:1}
+
+/* ---------- learn ---------- */
+.learn{flex:1;display:flex;flex-direction:column;gap:14px;padding:18px 22px;overflow:auto}
+.lhead{display:flex;flex-direction:column;gap:4px}
+.ltitle{font-size:clamp(26px,2.6vw,40px);font-weight:700}
+.lgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;flex:1;grid-auto-rows:minmax(130px,1fr)}
+.ltile{border:2px solid var(--line);border-radius:16px;background:var(--panel);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:clamp(17px,1.6vw,24px);font-weight:650;text-align:center;padding:8px;min-height:110px}
+.ltile .em{font-size:clamp(34px,3.4vw,56px);line-height:1}
+.ltile small{font-size:12px;font-weight:500;color:var(--accent)}
+.ltile.other{background:var(--soft);border-color:var(--accent)}
+.ltile.off{opacity:.35;cursor:default}
+.ltile.go{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.ltile.go small{color:inherit}
+.sugrow{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px}
+.ltile.search{flex-direction:row;gap:14px;background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-size:clamp(18px,1.8vw,28px)}
+.ltile.search small{color:inherit;display:block}
+.ltile.search.off{background:var(--code);color:var(--muted);border-color:var(--line)}
+.typed{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:2px solid var(--line);padding:2px 4px 8px}
+.typed .mono{font-size:clamp(28px,2.6vw,40px);font-weight:700;letter-spacing:.08em}
+.typed i{color:var(--accent);font-style:normal;animation:blink 1s infinite}
+.kb{display:grid;grid-template-columns:repeat(7,1fr);gap:10px;flex:1;grid-auto-rows:minmax(70px,1fr)}
+.key{border:2px solid var(--line);border-radius:14px;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:clamp(24px,2.4vw,38px);font-weight:700}
+.key.off{opacity:.18;cursor:default}
+.key.ctl{background:var(--code);font-size:clamp(16px,1.5vw,22px)}
+.ltext{font-size:clamp(24px,2.3vw,36px);line-height:1.6;max-width:1100px}
+.ltext span{border-radius:8px;padding:0 4px;transition:background .2s}
+.ltext span.reading{background:var(--hl)}
+.lbtns{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:auto}
+.learn .opts{margin:auto;width:min(1100px,100%)}
+
+/* ---------- level check ---------- */
+.quiz{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;gap:18px;overflow:auto}
+.qtext{font-size:clamp(24px,2.4vw,38px);font-weight:600;text-align:center;max-width:1000px}
+.opts{display:grid;gap:16px;width:min(1000px,100%)}
+.opts .big{min-height:130px;font-size:30px}
+.qmeta{display:flex;gap:16px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+.report{width:min(820px,100%);display:flex;flex-direction:column;gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi small{color:var(--muted)}
+.kpi b{display:block;font-size:26px}
+.bars div{display:grid;grid-template-columns:150px 1fr 70px;align-items:center;gap:10px;margin:6px 0}
+.bars i{height:12px;border-radius:6px;background:var(--line);overflow:hidden;display:block;position:relative}
+.bars i s{display:block;height:100%;background:var(--accent)}
+.bars u{position:absolute;top:0;bottom:0;width:3px;margin-left:-1px;background:var(--ok)}
+table.qlog{width:100%;border-collapse:collapse;font-size:13px}
+table.qlog td,table.qlog th{border-bottom:1px solid var(--line);padding:5px;text-align:left}
+.tag{font-size:11px;padding:2px 7px;border-radius:99px;font-weight:600}
+.tag.valid{background:#2f8a5722;color:var(--ok)}
+.tag.uncertain{background:#d49a1222;color:var(--warn)}
+.tag.none{background:var(--code);color:var(--muted)}
+.profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.profiles .kpi{display:flex;flex-direction:column;gap:4px}
+.opts .big.ghost{border-color:var(--accent);box-shadow:0 0 0 4px var(--soft)}
+.opts .big.right{background:#2f8a5722;border-color:var(--ok)}
+.opts .big.wrong{background:#c23b3b22;border-color:var(--bad)}
+</style>
+</head>
+<body>
+
+<aside>
+  <div class="brand"><i></i>Rettina</div>
+  <div class="nav-label">Modules</div>
+  <div class="nav">
+    <button data-v="convo" class="on">💬 <span>Conversation<small>Predictive words · sentence completion</small></span></button>
+    <button data-v="learn">🧭 <span>Learn<small>What would you like to learn?</small></span></button>
+    <button data-v="hw">📄 <span>Accessible Homework<small>Assignment → questions</small></span></button>
+    <button data-v="quiz">🎯 <span>Level Check<small>Adaptive quiz · knowledge map</small></span></button>
+  </div>
+  <div class="nav-label">Student</div>
+  <div class="nav"><button disabled>👧 <span>Noa · Grade 3<small>Rett · gaze input</small></span></button></div>
+
+  <div class="side-foot">
+    <div class="nav-label" style="padding-left:8px">Input</div>
+    <label>Pointer <select id="inputMode"><option value="mouse">Mouse</option><option value="gaze">Webcam eye gaze</option><option value="head">Webcam head pointer</option></select></label>
+    <div class="row"><button class="btn sm" id="calBtn">◎ Calibrate</button><label style="padding:0;gap:4px">Camera <input type="checkbox" id="camOn"></label></div>
+    <label>Snap radius <input type="range" id="snap" min="0" max="300" step="10" value="140"><span id="snapVal" class="mono">140</span></label>
+    <label>Dwell select <input type="checkbox" id="dwellOn" checked></label>
+    <label>Dwell time <input type="range" id="dwellMs" min="500" max="5000" step="100" value="1200"><span id="dwellVal" class="mono">1.2s</span></label>
+    <div class="nav-label" style="padding-left:8px">Language model</div>
+    <label>Model <select id="model"><option value="claude-opus-5-5">Claude Opus 5.5</option><option value="claude-haiku-5-5">Claude Haiku 5.5 (fastest)</option></select></label>
+    <div class="row"><button class="btn sm" id="keyBtn">🔑 Set API key</button><button class="btn sm" id="themeBtn">◐ Theme</button></div>
+    <label>Speech <select id="lang"><option value="en-US">English</option><option value="he-IL">Hebrew</option></select></label>
+    <div class="status">
+      <span><i class="dot off" id="sttDot"></i>Room audio: <span id="sttStat">idle</span></span>
+      <span><i class="dot mock" id="llmDot"></i>LLM: <span id="llmStat">mock (no key)</span></span>
+      <span><i class="dot" id="gazeDotI"></i>Input: <span id="gazeStat">mouse</span></span>
+    </div>
+  </div>
+</aside>
+
+<main>
+  <header>
+    <h1 id="title">Conversation</h1><span class="crumb" id="crumb">Grade 3 · History · "Life in Medieval Times"</span>
+    <span class="sp"></span>
+    <span class="hint" id="savingsWrap">Last message: <span id="savings">—</span></span>
+    <span class="pill">PROTOTYPE</span>
+  </header>
+
+  <!-- CONVERSATION -->
+  <section class="view on" id="convo">
+    <div class="c-room">
+      <div class="rowhead"><b>Room context</b><span id="roomState">idle</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="simBtn">▶ Simulate class</button>
+        <button class="btn" id="micBtn">🎙️ Listen (mic)</button>
+      </div>
+      <div id="feed"></div>
+      <div class="hint">Speech runs in the background and only feeds the predictions. The student never has to read it.</div>
+    </div>
+    <div class="c-talk">
+      <div class="rowhead"><b>Noa's board</b><span class="mono" id="predStat"></span></div>
+      <div id="kw"></div>
+      <div class="sents" id="sents"></div>
+      <div class="wgrid" id="words"></div>
+      <div class="ctl">
+        <div class="tile dw" id="undoB">⌫ Undo</div>
+        <div class="tile dw" id="clearB">✕ Clear</div>
+        <div class="tile dw say" id="sayB">🔊 Say my words as they are</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LEARN -->
+  <section class="view" id="learn"><div class="learn" id="learnBox"></div></section>
+
+  <!-- HOMEWORK -->
+  <section class="view" id="hw">
+    <div class="chat">
+      <div class="thread" id="thread"></div>
+      <div class="composer"><div class="box">
+        <textarea id="hwInput" placeholder="Paste an assignment, or describe a topic the child asked about…"></textarea>
+        <div class="bar">
+          <button class="btn" id="sampleBtn">📎 Use sample worksheet</button>
+          <span class="hint">PDF / Word / photo upload comes later</span>
+          <span class="sp"></span>
+          <button class="btn primary" id="genBtn">Generate questions ↑</button>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- LEVEL CHECK -->
+  <section class="view" id="quiz"><div class="quiz" id="quizBox"></div></section>
+
+  <details id="log"><summary>Agent activity · <span id="logCount">0</span> events</summary><div id="logBody" class="mono"></div></details>
+</main>
+
+<div id="modal"><div class="card" id="modalCard"></div></div>
+<div id="toast"></div>
+<div id="gazeDot"></div>
+<div id="calib"><div id="calibDot"></div><div id="calibMsg"></div></div>
+<canvas id="camPreview" width="320" height="240"></canvas>
+
+<script>
+/* ================= shared ================= */
+const $ = s => document.querySelector(s);
+const state = { dwellOn:true, dwellMs:1200 };
+let logN = 0;
+function log(tool, msg){
+  logN++; $('#logCount').textContent = logN;
+  const d = document.createElement('div');
+  d.innerHTML = `${new Date().toLocaleTimeString()}  <b>${tool}</b>  ${msg}`;
+  $('#logBody').prepend(d);
+}
+window.rettinaLog = log;
+function toast(html, ms=4000){
+  const t = $('#toast'); t.innerHTML = html; t.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(()=>t.classList.remove('on'), ms);
+}
+function speak(text){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang=$('#lang').value; speechSynthesis.speak(u); }catch(e){} }
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const STOP = new Set('a an the and or but so to of in on at by for with from into onto is are was were be been am i you he she it we they them her his its our their this that these those there here then than what where when who why how do does did not no yes very just also as up down out over about after before all some can could would should will one two my me your let lets let\'s ok okay now go went said says say think talk today class page see little small big'.split(' '));
+
+/* view switching */
+const titles = {convo:['Conversation','Grade 3 · History · "Life in Medieval Times"'],learn:['Learn','Student-chosen topics · gaze keyboard with autocomplete'],hw:['Accessible Homework','Teacher workspace · AI drafts, teacher approves'],quiz:['Level Check','Adaptive quiz from approved questions']};
+document.querySelectorAll('.nav button[data-v]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id===b.dataset.v));
+  [$('#title').textContent,$('#crumb').textContent] = titles[b.dataset.v];
+  $('#savingsWrap').style.visibility = b.dataset.v==='convo'?'visible':'hidden';
+  if(b.dataset.v==='quiz' && !quiz.active) renderQuizIntro();
+  if(b.dataset.v==='learn') Learn.open(); else { try{ speechSynthesis.cancel(); }catch(e){} }
+});
+
+/* settings */
+$('#dwellOn').onchange = e => state.dwellOn = e.target.checked;
+$('#dwellMs').oninput = e => { state.dwellMs = +e.target.value; $('#dwellVal').textContent = (state.dwellMs/1000).toFixed(1)+'s'; };
+$('#snap').oninput = e => { $('#snapVal').textContent = e.target.value; window.Gaze?.setSnap(+e.target.value); };
+$('#themeBtn').onclick = () => {
+  const r = document.documentElement, dark = matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = (r.dataset.theme || (dark?'dark':'light'))==='dark'?'light':'dark';
+};
+$('#inputMode').onchange = async e => {
+  const m = e.target.value;
+  try { await window.Gaze.setMode(m); log('input.mode', m); }
+  catch(err){ e.target.value='mouse'; await window.Gaze.setMode('mouse'); toast(`Camera unavailable: ${esc(err.message||err.name)}`); }
+};
+$('#calBtn').onclick = () => window.Gaze.calibrate();
+$('#camOn').onchange = e => window.Gaze.setPreview(e.target.checked);
+
+/* ================= dwell engine (mouse, eye gaze or head pointer) ================= */
+const Dwell = { source:'mouse', target:null, start:0, spent:null };
+window.Dwell = Dwell;
+function setTarget(t){
+  if(t===Dwell.target) return;
+  if(Dwell.target){ Dwell.target.style.setProperty('--p',0); Dwell.target.classList.remove('gz'); }
+  Dwell.target = null;
+  if(t!==Dwell.spent) Dwell.spent = null;
+  if(t && state.dwellOn && t!==Dwell.spent){ Dwell.target=t; Dwell.start=performance.now(); if(Dwell.source!=='mouse') t.classList.add('gz'); }
+}
+Dwell.gazeTarget = t => { if(Dwell.source!=='mouse') setTarget(t); else if(!t) setTarget(null); };
+document.addEventListener('pointerover', e=>{ if(Dwell.source==='mouse') setTarget(e.target.closest('.dw')); });
+document.addEventListener('mouseleave', ()=>{ if(Dwell.source==='mouse') setTarget(null); });
+(function loop(){
+  const t = Dwell.target;
+  if(t){
+    if(!document.body.contains(t) || t.offsetParent===null){ Dwell.target=null; }
+    else{
+      const p = Math.min(1,(performance.now()-Dwell.start)/state.dwellMs);
+      t.style.setProperty('--p',p);
+      if(p>=1){ Dwell.spent=t; t.style.setProperty('--p',0); t.classList.remove('gz'); Dwell.target=null; t.click(); flash(t); }
+    }
+  }
+  requestAnimationFrame(loop);
+})();
+function flash(el){ el.classList.remove('fired'); void el.offsetWidth; el.classList.add('fired'); }
+function showModal(h){ $('#modalCard').innerHTML=h; $('#modal').classList.add('on'); }
+function hideModal(){ $('#modal').classList.remove('on'); }
+
+/* ================= CONVERSATION ================= */
+const CORE = ['Yes','No','Teacher','I want','Ask',"I don't know"];
+const NSLOTS = 18;
+const C = { lines:[], interim:null, kw:[], words:Array(NSLOTS).fill(null), sents:[], pending:null, reqId:0, lastCtx:0, ctxTimer:null, loading:false, picks:0 };
+
+function addLine(who, text, kind=''){
+  C.lines.push({who, text, kind});
+  if(C.lines.length>60) C.lines.shift();
+  renderFeed();
+  if(kind!=='student' && /\bnoa\b/i.test(text)) log('context.addressed','student was addressed by name → refreshing now');
+  scheduleCtx(/\bnoa\b/i.test(text) ? 0 : null);
+}
+function renderFeed(){
+  const f=$('#feed');
+  f.innerHTML = C.lines.slice(-30).map(l=>`<div class="ln ${l.kind==='student'?'stu':''} ${l.kind!=='student'&&/\bnoa\b/i.test(l.text)?'addr':''}"><b>${esc(l.who)}</b>${esc(l.text)}</div>`).join('')
+    + (C.interim?`<div class="ln interim"><b>…</b>${esc(C.interim)}</div>`:'');
+  f.scrollTop = f.scrollHeight;
+}
+/* context-driven refresh: debounced and throttled (≥4 s apart) so the board stays calm */
+function scheduleCtx(forceDelay){
+  clearTimeout(C.ctxTimer);
+  const wait = forceDelay ?? Math.max(900, 4000-(performance.now()-C.lastCtx));
+  C.ctxTimer = setTimeout(()=>refresh('context'), wait);
+}
+async function refresh(reason){
+  if(!window.LLM) return;
+  const id = ++C.reqId; C.lastCtx = performance.now();
+  if(C.kw.length){ C.loading=true; renderSents(); }
+  $('#predStat').textContent = 'predicting…';
+  let r;
+  try{ r = await LLM.suggest({ lines:C.lines.slice(-14), keywords:C.kw, lang:$('#lang').selectedOptions[0].text }); }
+  catch(e){ return; }                                   // superseded by a newer request
+  if(id!==C.reqId) return;
+  C.loading=false;
+  C.sents = C.kw.length ? r.sentences.slice(0,3) : [];
+  renderSents();
+  C.pending = r.words;
+  applyWords(reason!=='context');
+  const src = r.source==='mock' ? `mock${r.error?` (${r.error})`:''}` : r.source;
+  $('#predStat').textContent = `${src} · ${r.ms} ms`;
+  setLlmStatus(r);
+  log(r.source==='mock'?'mock.predict':'claude.predict', `${reason} · ${C.kw.length?`[${C.kw.join(', ')}] → ${C.sents.length} sentences, `:''}${r.words.length} words · ${r.ms} ms`);
+}
+/* stable board: words that are still likely keep their tile; only free tiles change.
+   Context updates wait while the student is mid-selection on the word grid. */
+function applyWords(force){
+  if(!C.pending) return;
+  if(!force && Dwell.target && $('#words').contains(Dwell.target)) return;   // retried by the interval below
+  const bad = new Set([...CORE, ...C.kw].map(w=>w.toLowerCase()));
+  const cand = [...new Set(C.pending.map(w=>w.trim()).filter(w=>w && !bad.has(w.toLowerCase())))];
+  const keepPool = new Set(cand.slice(0, NSLOTS+4).map(w=>w.toLowerCase()));
+  C.words = C.words.map(w => w && keepPool.has(w.toLowerCase()) ? w : null);
+  const present = new Set(C.words.filter(Boolean).map(w=>w.toLowerCase()));
+  const fresh = cand.filter(w=>!present.has(w.toLowerCase()));
+  const added = new Set();
+  C.words = C.words.map(w => w ?? (fresh.length ? (added.add(fresh[0]), fresh.shift()) : null));
+  C.pending = null;
+  renderWords(added);
+}
+setInterval(()=>applyWords(false), 300);
+
+function renderWords(added=new Set()){
+  $('#words').innerHTML =
+    CORE.map(w=>`<div class="tile core dw" data-w="${esc(w)}">${esc(w)}</div>`).join('') +
+    C.words.map(w=> w ? `<div class="tile dw ${added.has(w)?'new':''}" data-w="${esc(w)}">${esc(w)}</div>` : `<div class="tile empty">·</div>`).join('');
+}
+function renderKw(){ $('#kw').innerHTML = C.kw.map(k=>`<span>${esc(k)}</span>`).join(''); }
+function renderSents(){
+  let h;
+  if(!C.kw.length) h = [0,1,2].map(()=>`<div class="big sent ph">sentence suggestions appear here</div>`).join('');
+  else if(C.loading) h = [0,1,2].map(()=>`<div class="big sent loading">…</div>`).join('');
+  else h = C.sents.map(s=>`<div class="big sent dw" data-s="${esc(s)}">${esc(s)}</div>`).join('') || `<div class="big sent ph">no suggestion</div>`;
+  $('#sents').innerHTML = h;
+}
+$('#words').addEventListener('click', e=>{
+  const t=e.target.closest('[data-w]'); if(!t) return;
+  C.kw.push(t.dataset.w); C.picks++;
+  renderKw(); log('student.select', `"${t.dataset.w}" (selection ${C.picks})`);
+  C.pending = null; refresh('keyword');
+});
+$('#sents').addEventListener('click', e=>{
+  const t=e.target.closest('[data-s]'); if(!t) return;
+  C.picks++; send(t.dataset.s);
+});
+$('#undoB').onclick = ()=>{ if(!C.kw.length) return; C.kw.pop(); C.picks++; renderKw(); refresh('keyword'); };
+$('#clearB').onclick = ()=>{ C.kw=[]; C.sents=[]; C.picks=0; renderKw(); renderSents(); refresh('keyword'); };
+$('#sayB').onclick = ()=>{ if(!C.kw.length) return; C.picks++; send(C.kw.join(' ')); };
+
+function send(text){
+  const words = text.split(/\s+/).length, picks = C.picks;
+  speak(text);
+  toast(`✋ <b>Noa says</b><br><span style="font-size:20px">"${esc(text)}"</span><small>Spoken aloud and shown on the teacher's screen · ${picks} selections</small>`, 6000);
+  $('#savings').textContent = `${picks} selections → ${words} words`;
+  log('student.send', `"${text}" · ${picks} selections for ${words} words (${Math.round((1-picks/words)*100)}% fewer than word-by-word)`);
+  C.kw=[]; C.sents=[]; C.picks=0; renderKw(); renderSents();
+  addLine('Noa', text, 'student');
+}
+
+/* ----- background room audio: simulated class or real microphone ----- */
+const SCRIPT = [
+  ['Ms. Cohen','Good morning everyone. Today we start a new topic: the Middle Ages, also called medieval times.'],
+  ['Ms. Cohen','Long ago, many people in Europe lived near a castle. The king and the knights lived inside the castle walls.'],
+  ['Dan','Did the knights have horses?'],
+  ['Ms. Cohen','Yes Dan. Knights rode big horses and wore heavy armor made of metal.'],
+  ['Ms. Cohen','Most people were farmers. They grew wheat and kept cows, sheep and chickens.'],
+  ['Yael','What did kids do? Did they go to school?'],
+  ['Ms. Cohen','Great question, Yael. Most children did not go to school. They helped their parents on the farm.'],
+  ['Ms. Cohen','Some boys trained to become knights. Some girls learned to weave cloth and bake bread.'],
+  ['Ms. Cohen','Noa, do you have a question about castles or knights?'],
+  ['Dan','I want to be a knight with a sword and a shield!'],
+  ['Ms. Cohen','Let\'s imagine. If you lived in medieval times, what job would you want?'],
+  ['Yael','I would be a baker, because I love bread.'],
+  ['Ms. Cohen','Noa, what job would you choose?'],
+  ['Ms. Cohen','Tomorrow we will draw our own castle, with towers and a drawbridge.'],
+];
+let simTimer=null, simIx=0;
+$('#simBtn').onclick = ()=>{
+  if(simTimer){ clearInterval(simTimer); simTimer=null; $('#simBtn').textContent='▶ Simulate class'; setStt('idle'); return; }
+  if(rec) stopMic();
+  if(simIx>=SCRIPT.length) simIx=0;
+  $('#simBtn').textContent='⏸ Pause class'; setStt('simulated');
+  const step = ()=>{ if(simIx>=SCRIPT.length){ clearInterval(simTimer); simTimer=null; $('#simBtn').textContent='▶ Restart class'; setStt('idle'); return; } addLine(...SCRIPT[simIx++]); };
+  step(); simTimer = setInterval(step, 6500);
+};
+let rec=null;
+function stopMic(){ const r=rec; rec=null; try{ r?.stop(); }catch(e){} $('#micBtn').classList.remove('on'); $('#micBtn').textContent='🎙️ Listen (mic)'; setStt('idle'); }
+$('#micBtn').onclick = ()=>{
+  if(rec) return stopMic();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ toast('This browser has no speech recognition. Use Chrome, or Simulate class.'); return; }
+  if(simTimer) $('#simBtn').click();
+  rec = new SR(); rec.continuous=true; rec.interimResults=true; rec.lang=$('#lang').value;
+  rec.onresult = e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal){ C.interim=null; const t=r[0].transcript.trim(); if(t) addLine('Room', t); }
+      else interim += r[0].transcript;
+    }
+    if(interim){ C.interim=interim; renderFeed(); }
+  };
+  rec.onerror = e=>{ log('stt.error', e.error); if(e.error==='not-allowed'){ toast('Microphone permission was denied.'); stopMic(); } };
+  rec.onend = ()=>{ if(rec) try{ rec.start(); }catch(e){} };   // Chrome stops after silence: keep listening
+  rec.start();
+  $('#micBtn').classList.add('on'); $('#micBtn').textContent='⏹ Stop listening'; setStt('microphone (Chrome speech service)');
+  log('stt.start', `${rec.lang} · audio goes to the browser's speech service; only text is kept`);
+};
+function setStt(s){ $('#sttStat').textContent=s; $('#roomState').innerHTML = s==='idle'?'idle':`<span class="rec">● ${s.split(' ')[0]}</span>`; $('#sttDot').className='dot '+(s==='idle'?'off':s==='simulated'?'mock':''); }
+
+/* ----- LLM settings ----- */
+function setLlmStatus(r){
+  const real = r && r.source!=='mock';
+  $('#llmDot').className = 'dot '+(real?'':'mock');
+  $('#llmStat').textContent = real ? `${r.source} · ${r.ms} ms` : (LLM.hasKey ? `mock (${r?.error||'fallback'})` : 'mock (no key)');
+}
+$('#keyBtn').onclick = ()=>{
+  const k = prompt('Paste an Anthropic API key (stored only in this browser for this prototype). Leave empty to remove it and use the mock.', '');
+  if(k===null) return;
+  LLM.setKey(k.trim()); log('llm.key', k.trim()?'key set (kept in this browser only)':'key removed → mock');
+  setLlmStatus(null); refresh('settings');
+};
+$('#model').onchange = e=>{ LLM.model = e.target.value; log('llm.model', e.target.value); refresh('settings'); };
+$('#lang').onchange = ()=>{ if(rec){ stopMic(); $('#micBtn').click(); } };
+
+function initConvo(){
+  $('#model').value = LLM.model;
+  setLlmStatus(null);
+  renderKw(); renderSents(); renderWords(); refresh('init');
+}
+if(window.LLM) initConvo(); else addEventListener('llm-ready', initConvo, {once:true});
+</script>
+<script src="learn.js"></script>
+<script src="homework.js"></script>
+<script src="quiz.js"></script>
+<script type="module" src="llm.js"></script>
+<script type="module" src="gaze.js"></script>
+</body>
+</html>
