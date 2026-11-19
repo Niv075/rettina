@@ -301,6 +301,19 @@ function generic(topic){
 /* ---------------- state ---------------- */
 let L = { on:false, id:0 }, stream, act, bankA, bankB;
 const cap = s => Lang.cur==='he' ? s : s[0].toUpperCase() + s.slice(1);
+const OWL = '<svg class="owl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 4.5 8 7M17.5 4.5 16 7"/><path d="M5 10c0-3.3 3-5 7-5s7 1.7 7 5v4.5c0 3.8-3 6.5-7 6.5s-7-2.7-7-6.5z"/><circle cx="9.2" cy="10.6" r="2.1"/><circle cx="14.8" cy="10.6" r="2.1"/><path d="m11.2 13.4.8 1.2.8-1.2"/><path d="M9.3 17.6c.9.6 1.8.9 2.7.9s1.8-.3 2.7-.9"/></svg>';
+/* soft click when a frame tile selects (needs sound on and one earlier user gesture) */
+let actx;
+window.uiTick = () => {
+  if(!App.sound) return;
+  try{
+    actx = actx || new AudioContext();
+    const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime;
+    o.type = 'sine'; o.frequency.value = 660;
+    g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(.07, t0 + .01); g.gain.exponentialRampToValueAtTime(.0001, t0 + .12);
+    o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + .13);
+  }catch(e){}
+};
 const teacher = () => tr('Ollie','ינשופי');
 const times = n => tr(`${n} time${n===1?'':'s'}`, n===1 ? 'פעם אחת' : `${n} פעמים`);
 
@@ -313,9 +326,44 @@ function start(item, hooks, carry){
   stop();
   const script = SCRIPTS[Lang.cur][item.topic] || generic(App.tp(item.topic)), S = App.SUBJ[item.subj];
   L = { on:true, id:L.id+1, item, hooks, script, si:-1, rate:.92, right:0, total:0, stars:0, said:0,
-        word:null, cur:null, mcq:null, q:Promise.resolve(), left:item.min*60, paused:false, done:false };
+        word:null, cur:null, mcq:null, q:Promise.resolve(), left:item.min*60, paused:false, done:false,
+        frame:!!App.settings.frame, drawer:false };
   if(carry){ Object.assign(L, { right:carry.right, total:carry.total, stars:carry.stars, said:carry.said, left:carry.left }); L.si = carry.si - 1; }
   const stage = $('#sStage');
+  if(L.frame){
+    stage.innerHTML = `
+  <div class="fr" id="fr">
+    <div class="fr-head lz-head">
+      <span class="subj">${S.em} <b>${App.sn(item.subj)}</b> · ${esc(App.tp(item.topic))}</span>
+      <div class="lz-steps" id="lzSteps"></div>
+      <span class="sp"></span>
+      <span class="meta" id="lzStars">${ic('star')} ${L.stars}</span>
+      <span class="meta" id="lzTime"></span>
+    </div>
+    <div class="fr-start">
+      <div class="fz dw fr-tile" id="frBack" data-dwell="2">${ic('house')}<b>${tr('Today','היום')}</b><small>${tr('look a little longer','מבט קצת ארוך')}</small></div>
+      <div class="fz dw fr-tile fr-talk" id="frTalk">${ic('message-circle')}<b>${tr('Talk','לדבר')}</b><small>${tr('to Ollie','עם ינשופי')}</small></div>
+    </div>
+    <div class="fr-center quiet">
+      <div class="fr-ollie lz-ollie" id="lzOllie"><div class="face">${OWL}</div><div><b>${teacher()}</b><small>${tr('your teacher · simulated AI','המורה שלך · AI מדומה')}</small></div></div>
+      <div class="lz-stream" id="lzStream"></div>
+      <div class="fr-hint" id="frHint"></div>
+    </div>
+    <div class="fr-end">
+      <div class="fz dw fr-tile" id="frAgain">${ic('repeat')}<b>${tr('Again','שוב')}</b><small>${tr('hear it again','לשמוע שוב')}</small></div>
+      <div class="fr-slot" id="frFwd"><div class="fr-ph"></div></div>
+    </div>
+    <div class="fr-ans" id="frAns"></div>
+    <div class="fr-drawer" id="frDrawer" hidden>
+      <div class="lbl"><span>${ic('message-circle')} ${tr('Talk to Ollie','לדבר עם ינשופי')}</span><span id="lzHint"></span></div>
+      <div class="bank-row fr-bank" id="bankA"></div>
+      <div class="bank-row fr-bank" id="bankB"></div>
+    </div>
+  </div>`;
+    $('#frBack').onclick = () => L.hooks.onHome();
+    $('#frTalk').onclick = () => drawer(!L.drawer);
+    $('#frAgain').onclick = () => phrase('again');
+  } else {
   stage.innerHTML = `
   <div class="lz-head">
     <span class="subj">${S.em} <b>${App.sn(item.subj)}</b> · ${esc(App.tp(item.topic))}</span>
@@ -325,7 +373,7 @@ function start(item, hooks, carry){
     <span class="meta" id="lzTime"></span>
   </div>
   <div class="lz-main">
-    <div class="lz-ollie" id="lzOllie"><div class="face"><svg class="owl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 4.5 8 7M17.5 4.5 16 7"/><path d="M5 10c0-3.3 3-5 7-5s7 1.7 7 5v4.5c0 3.8-3 6.5-7 6.5s-7-2.7-7-6.5z"/><circle cx="9.2" cy="10.6" r="2.1"/><circle cx="14.8" cy="10.6" r="2.1"/><path d="m11.2 13.4.8 1.2.8-1.2"/><path d="M9.3 17.6c.9.6 1.8.9 2.7.9s1.8-.3 2.7-.9"/></svg></div><b>${teacher()}</b><small>${tr('your teacher','המורה שלך')}</small><span class="sim">${tr('simulated AI','AI מדומה')}</span></div>
+    <div class="lz-ollie" id="lzOllie"><div class="face">${OWL}</div><b>${teacher()}</b><small>${tr('your teacher','המורה שלך')}</small><span class="sim">${tr('simulated AI','AI מדומה')}</span></div>
     <div class="lz-right"><div class="lz-stream" id="lzStream"></div><div class="lz-act" id="lzAct"></div></div>
   </div>
   <div class="lz-bank">
@@ -333,11 +381,12 @@ function start(item, hooks, carry){
     <div class="bank-row" id="bankA"></div>
     <div class="bank-row" id="bankB"></div>
   </div>`;
+  }
   stream = $('#lzStream'); act = $('#lzAct'); bankA = $('#bankA'); bankB = $('#bankB');
   bankA.onclick = onBankA; bankB.onclick = onBankB;
   renderBank(); drawSteps(); tick(true);
   L.timer = setInterval(tick, 1000);
-  log('lesson.start', `${item.subj} · ${item.topic} · ${Lang.cur} · scripted teacher · ${item.min} min${carry?` · resumed at step ${carry.si+1}`:''}`);
+  log('lesson.start', `${item.subj} · ${item.topic} · ${Lang.cur} · ${L.frame?'frame':'classic'} layout · scripted teacher · ${item.min} min${carry?` · resumed at step ${carry.si+1}`:''}`);
   if(carry?.done) queue(() => finish(true)); else queue(next);
 }
 function state(){ return L.on ? { si:Math.max(0, L.si), right:L.right, total:L.total, stars:L.stars, said:L.said, left:L.left, done:L.done } : null; }
@@ -390,6 +439,24 @@ function reply(text, cls=''){
   });
 }
 
+/* ---------------- layout helpers: classic puts actions under the text, the frame puts them on the edges ---------------- */
+const PH = '<div class="fr-ph"></div>';
+function setFwd(html){ if(L.frame){ const f = $('#frFwd'); if(f) f.innerHTML = html || PH; } else act.innerHTML = html || ''; }
+function clearAct(){ setFwd(''); if(L.frame){ const a = $('#frAns'); if(a) a.innerHTML = ''; hint(''); } }
+function hint(html){ const h = L.frame ? $('#frHint') : $('#mcqHint'); if(h) h.innerHTML = html; }
+const ansBox = () => L.frame ? $('#frAns') : act;
+const fwdIcon = () => ic(Lang.cur==='he' ? 'arrow-left' : 'arrow-right');
+function drawer(open){
+  if(!L.frame) return;
+  L.drawer = open;
+  $('#frDrawer').hidden = !open;
+  $('#fr').classList.toggle('drawer-open', open);
+  $('#frTalk').innerHTML = open ? `${ic('x')}<b>${tr('Close','סגירה')}</b><small>${tr('back to the lesson','חזרה לשיעור')}</small>`
+                                : `${ic('message-circle')}<b>${tr('Talk','לדבר')}</b><small>${tr('to Ollie','עם ינשופי')}</small>`;
+  if(!open && L.word){ L.word = null; renderBank(); }
+  log('lesson.talk', open ? 'drawer opened' : 'drawer closed');
+}
+
 /* ---------------- lesson steps ---------------- */
 function next(){
   L.si++; drawSteps();
@@ -398,20 +465,32 @@ function next(){
   return s.q ? ask(s) : teach(s);
 }
 async function teach(s){
-  L.cur = s; L.mcq = null; act.innerHTML = '';
+  L.cur = s; L.mcq = null; clearAct();
   await type(s.p);
   if(L.on) contTile();
 }
 function contTile(){
-  act.innerHTML = `<div class="lz-cont dw" id="lzCont">${tr('Next','הבא')}&nbsp;${ic(Lang.cur==='he'?'arrow-left':'arrow-right')}</div>`;
-  $('#lzCont').onclick = () => { act.innerHTML = ''; queue(next); };
+  setFwd(L.frame
+    ? `<div class="fz dw fr-tile fr-go" id="lzCont">${fwdIcon()}<b>${tr('Next','הבא')}</b></div>`
+    : `<div class="lz-cont dw" id="lzCont">${tr('Next','הבא')}&nbsp;${fwdIcon()}</div>`);
+  $('#lzCont').onclick = () => { setFwd(''); queue(next); };
 }
 async function ask(s){
-  L.cur = s; act.innerHTML = '';
+  L.cur = s; clearAct();
   await type(s.q, 'q');
   if(!L.on) return;
   L.mcq = { s, chosen:null, rev:0, answered:false, t0:performance.now() };
   const order = [...s.options.keys()].sort(() => Math.random() - .5);
+  const hintTxt = App.settings.confirmStep
+    ? (L.frame ? tr('Look at an answer. Then look at ✓ in the corner to choose it.','תסתכלי על תשובה. אחר כך תסתכלי על ✓ בפינה כדי לבחור אותה.')
+               : tr('Look at an answer. Then look at ✓ under it to choose it.','תסתכלי על תשובה. אחר כך תסתכלי על ✓ שמתחתיה כדי לבחור אותה.'))
+    : tr('Look at an answer to choose it.','תסתכלי על תשובה כדי לבחור אותה.');
+  if(L.frame){
+    $('#frAns').innerHTML = order.map(i => `<div class="fz opt dw" data-o="${i}"><span>${esc(s.options[i])}</span></div>`).join('');
+    hint(hintTxt);
+    $('#frAns').querySelectorAll('[data-o]').forEach(el => el.onclick = () => choose(+el.dataset.o));
+    return;
+  }
   act.innerHTML = `
     <div class="mcq">${order.map(i => `<div class="mcq-col"><div class="opt dw" data-o="${i}">${esc(s.options[i])}</div><div class="cf" data-cf="${i}"><span>✓</span>${tr('Yes, this one','כן, את זאת')}</div></div>`).join('')}</div>
     <div class="mcq-hint" id="mcqHint">${App.settings.confirmStep ? tr('Look at an answer. Then look at ✓ under it to choose it.','תסתכלי על תשובה. אחר כך תסתכלי על ✓ שמתחתיה כדי לבחור אותה.') : tr('Look at an answer to choose it.','תסתכלי על תשובה כדי לבחור אותה.')}</div>`;
@@ -425,9 +504,18 @@ function choose(i){
   if(m.chosen===i) return;
   if(m.chosen!==null) m.rev++;
   m.chosen = i;
-  act.querySelectorAll('[data-o]').forEach(el => el.classList.toggle('chosen', +el.dataset.o===i));
-  act.querySelectorAll('[data-cf]').forEach(el => { const on = +el.dataset.cf===i; el.classList.toggle('on', on); el.classList.toggle('dw', on); });
+  ansBox().querySelectorAll('[data-o]').forEach(el => el.classList.toggle('chosen', +el.dataset.o===i));
   const o = esc(m.s.options[i]);
+  if(L.frame){
+    /* the ✓ always appears in the same forward corner */
+    setFwd(`<div class="fz dw fr-tile fr-go ok cf on" data-cf="${i}">${ic('check')}<b>${tr('Yes, this one','כן, את זאת')}</b><small>“${o}”</small></div>`);
+    $('#frFwd [data-cf]').onclick = () => commit(i);
+    hint(tr(`You picked <b>“${o}”</b>. Look at ✓ to lock it in, or look at another answer.`, `בחרת <b>"${o}"</b>. תסתכלי על ✓ כדי לנעול, או על תשובה אחרת.`));
+    say(m.s.options[i], true);
+    log('lesson.choose', `“${m.s.options[i]}”${m.rev?` (changed ${m.rev}×)`:''} · waiting for ✓ (frame)`);
+    return;
+  }
+  act.querySelectorAll('[data-cf]').forEach(el => { const on = +el.dataset.cf===i; el.classList.toggle('on', on); el.classList.toggle('dw', on); });
   $('#mcqHint').innerHTML = tr(`You picked <b>“${o}”</b>. Look at ✓ to lock it in, or look at another answer.`, `בחרת <b>"${o}"</b>. תסתכלי על ✓ כדי לנעול, או על תשובה אחרת.`);
   say(m.s.options[i], true);
   log('lesson.choose', `“${m.s.options[i]}”${m.rev?` (changed ${m.rev}×)`:''} · waiting for ✓`);
@@ -436,10 +524,12 @@ function commit(i){
   const m = L.mcq; if(!m || m.answered) return;
   m.answered = true;
   const s = m.s, ok = i===s.a, secs = ((performance.now()-m.t0)/1000).toFixed(1), quality = m.rev ? 'uncertain' : 'valid', ans = s.options[s.a];
-  act.querySelectorAll('[data-o],[data-cf]').forEach(el => el.classList.remove('dw','on','chosen'));
-  act.querySelector(`[data-o="${i}"]`).classList.add(ok ? 'right' : 'wrong');
-  if(!ok) act.querySelector(`[data-o="${s.a}"]`).classList.add('right');
-  $('#mcqHint').textContent = ok ? tr('Correct!','נכון!') : tr(`The answer is “${ans}”.`, `התשובה היא "${ans}".`);
+  const box = ansBox();
+  box.querySelectorAll('[data-o],[data-cf]').forEach(el => el.classList.remove('dw','on','chosen'));
+  box.querySelector(`[data-o="${i}"]`).classList.add(ok ? 'right' : 'wrong');
+  if(!ok) box.querySelector(`[data-o="${s.a}"]`).classList.add('right');
+  if(L.frame) setFwd('');
+  hint(esc(ok ? tr('Correct!','נכון!') : tr(`The answer is “${ans}”.`, `התשובה היא "${ans}".`)));
   L.total++; if(ok){ L.right++; L.stars++; $('#lzStars').innerHTML = `${ic('star')} ${L.stars}`; }
   App.today.answers.push({ topic:L.item.topic, q:s.q, ok, quality });
   log('lesson.answer', `${ok?'correct':'wrong'} · ${quality} (${m.rev} change${m.rev===1?'':'s'} of mind) · ${secs}s · “${s.q}”`);
@@ -460,6 +550,13 @@ async function finish(resumed){
                 `עבודה מצוינת, נועה! ענית נכון על ${L.right} מתוך ${L.total}${L.said ? `, ודיברת איתי ${times(L.said)}` : ''}. אני גאה בך!`), 'good');
   if(!L.on) return;
   const nx = App.nextItem();
+  if(L.frame){
+    const a = $('#frAns'); if(a) a.innerHTML = ''; hint('');
+    setFwd(nx ? `<div class="fz dw fr-tile fr-go" id="lzNext">${App.SUBJ[nx.subj].em}<b>${tr('Next','הבא')}: ${esc(App.topicLabel(nx))}</b><small>${nx.min} ${tr('min','דק׳')}</small></div>`
+              : `<div class="fz dw fr-tile fr-go" id="lzHome">${ic('house')}<b>${tr('Back to today','חזרה להיום')}</b></div>`);
+    if(nx) $('#lzNext').onclick = () => L.hooks.onNext(nx); else $('#lzHome').onclick = () => L.hooks.onHome();
+    return;
+  }
   act.innerHTML = `<div class="lz-end">
     ${nx ? `<div class="st-tile go dw" id="lzNext"><span class="em">${App.SUBJ[nx.subj].em}</span>${tr('Next','הבא')}: ${esc(App.topicLabel(nx))}<small>${nx.min} ${tr('min','דק׳')}</small></div>` : ''}
     <div class="st-tile dw" id="lzHome" ${nx?'':'style="grid-column:1/-1"'}><span class="em">${ic('house')}</span>${tr('Back to today','חזרה להיום')}</div></div>`;
@@ -468,27 +565,28 @@ async function finish(resumed){
 }
 
 /* ---------------- word bank: Noa talks to the teacher ---------------- */
+const fz = () => L.frame ? 'fz' : '';
 function renderBank(){
   const words = Object.keys(L.script.words).slice(0, 8);
   if(L.word){
     const d = L.script.words[L.word];
-    bankA.innerHTML = d.q.map((s,i) => `<div class="bk sent dw" data-sq="${i}">${esc(s)}</div>`).join('')
-      + `<div class="bk dw" data-say>“${esc(cap(L.word))}?”<small>${tr('just my word','רק המילה שלי')}</small></div><div class="bk ph dw" data-cancel><span class="e">${ic('undo-2')}</span>${tr('Back','חזרה')}</div>`;
+    bankA.innerHTML = d.q.map((s,i) => `<div class="bk sent dw ${fz()}" data-sq="${i}">${esc(s)}</div>`).join('')
+      + `<div class="bk dw ${fz()}" data-say>“${esc(cap(L.word))}?”<small>${tr('just my word','רק המילה שלי')}</small></div><div class="bk ph dw ${fz()}" data-cancel><span class="e">${ic('undo-2')}</span>${tr('Back','חזרה')}</div>`;
     $('#lzHint').textContent = tr(`Pick a sentence about “${L.word}”, or say just the word`, `בחרי משפט על "${L.word}", או הגידי רק את המילה`);
   } else {
-    bankA.innerHTML = PHRASES[Lang.cur].map(([k,e,txt]) => `<div class="bk ph dw" data-ph="${k}"><span class="e">${ic(e)}</span>${esc(txt)}</div>`).join('');
+    bankA.innerHTML = PHRASES[Lang.cur].map(([k,e,txt]) => `<div class="bk ph dw ${fz()}" data-ph="${k}"><span class="e">${ic(e)}</span>${esc(txt)}</div>`).join('');
     $('#lzHint').textContent = tr('One look says a phrase · a word asks about it', 'מבט אחד אומר משפט · מילה שואלת עליה');
   }
-  bankB.innerHTML = words.map(w => `<div class="bk word dw ${w===L.word?'picked':''}" data-w="${esc(w)}">${esc(w)}</div>`).join('')
+  bankB.innerHTML = words.map(w => `<div class="bk word dw ${fz()} ${w===L.word?'picked':''}" data-w="${esc(w)}">${esc(w)}</div>`).join('')
     + Array(8 - words.length).fill('<div class="bk off"></div>').join('');
 }
 const looks = n => tr(n===1 ? '1 look' : `${n} looks`, n===1 ? 'מבט אחד' : `${n} מבטים`);
 function onBankA(e){
   const el = e.target.closest('.dw'); if(!el || !L.on) return;
   const d = el.dataset;
-  if(d.ph) return phrase(d.ph);
-  if(d.sq !== undefined){ const w = L.word, x = L.script.words[w]; L.word = null; renderBank(); me(x.q[+d.sq], `${tr('AI-completed','השלמת AI')} · ${looks(2)}`); return reply(x.a[+d.sq]); }
-  if(d.say !== undefined){ const w = L.word; L.word = null; renderBank(); me(`${cap(w)}?`, `${tr('her exact words','המילים שלה בדיוק')} · ${looks(2)}`); return reply(L.script.words[w].a[0]); }
+  if(d.ph){ if(L.drawer) drawer(false); return phrase(d.ph); }
+  if(d.sq !== undefined){ const w = L.word, x = L.script.words[w]; L.word = null; renderBank(); if(L.drawer) drawer(false); me(x.q[+d.sq], `${tr('AI-completed','השלמת AI')} · ${looks(2)}`); return reply(x.a[+d.sq]); }
+  if(d.say !== undefined){ const w = L.word; L.word = null; renderBank(); if(L.drawer) drawer(false); me(`${cap(w)}?`, `${tr('her exact words','המילים שלה בדיוק')} · ${looks(2)}`); return reply(L.script.words[w].a[0]); }
   if(d.cancel !== undefined){ L.word = null; renderBank(); }
 }
 function onBankB(e){
@@ -510,7 +608,8 @@ function phrase(k){
   const c = L.cur || {}, waiting = L.mcq && !L.mcq.answered;
   const r = {
     yes:   waiting ? tr('Great! Look at an answer, then look at ✓ to choose it.','מעולה! תסתכלי על תשובה, ואז על ✓ כדי לבחור אותה.') : tr('Great!','מעולה!'),
-    no:    tr("That's okay. Use the words below to tell me what you need.",'זה בסדר. אפשר להשתמש במילים למטה כדי להגיד לי מה את צריכה.'),
+    no:    L.frame ? tr("That's okay. Look at Talk to tell me what you need.",'זה בסדר. אפשר להסתכל על "לדבר" כדי להגיד לי מה את צריכה.')
+               : tr("That's okay. Use the words below to tell me what you need.",'זה בסדר. אפשר להשתמש במילים למטה כדי להגיד לי מה את צריכה.'),
     again: c.q || c.p || tr('Sure!','בטח!'),
     huh:   c.q ? (c.hint || tr('Let me help: listen to the question again, slowly.','בואי ננסה ביחד: תקשיבי לשאלה שוב, לאט.'))
                : c.easy ? tr(`Let me say it another way. ${c.easy}`, `אגיד את זה אחרת. ${c.easy}`) : tr('Let me say it another way.','אגיד את זה אחרת.'),

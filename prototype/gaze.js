@@ -130,9 +130,14 @@ function steer() {
 /* snap to the nearest selectable tile, with hysteresis so the target doesn't flicker */
 let snapped = null;
 function snap(x, y) {
+  /* quiet zones (reading area): looking there selects nothing and never snaps to a nearby tile */
+  for (const q of document.querySelectorAll('.quiet')) {
+    const r = q.getBoundingClientRect();
+    if (r.width && getComputedStyle(q).visibility !== 'hidden' && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) { snapped = null; return null; }
+  }
   const modal = document.querySelector('#modal.on, #calib.on');
   const scope = modal || document;
-  const dist = el => { const r = el.getBoundingClientRect(); if (!r.width) return Infinity;
+  const dist = el => { const r = el.getBoundingClientRect(); if (!r.width || getComputedStyle(el).visibility === 'hidden') return Infinity;
     const dx = Math.max(r.left - x, 0, x - r.right), dy = Math.max(r.top - y, 0, y - r.bottom); return Math.hypot(dx, dy); };
   let best = null, bd = Infinity;
   scope.querySelectorAll('.dw').forEach(el => { const d = dist(el); if (d < bd) { bd = d; best = el; } });

@@ -63,7 +63,7 @@ async function click(sel){
 async function look(sel, extra = 450){
   const el = await waitFor(sel); await moveTo(el, 'gaze');
   window.Dwell.force(el);
-  await w(state.dwellMs + extra);
+  await w(state.dwellMs * (+el.dataset.dwell || 1) + extra);
 }
 async function typeInto(sel, text){
   const el = await waitFor(sel); await moveTo(el, 'mouse'); el.focus();
@@ -176,14 +176,20 @@ const CH = [
   },
   async () => {
     say('Lesson with Ollie','שיעור עם ינשופי',
-        'A simulated AI teacher explains in short paragraphs, read aloud. Noa moves on when she is ready by looking at Next.',
-        'מורה AI מדומה מסביר בפסקאות קצרות, בהקראה. נועה ממשיכה כשהיא מוכנה, במבט על "הבא".');
+        'A simulated AI teacher explains in short paragraphs, read aloud. The middle of the screen is a quiet zone: Noa can read and rest her eyes there, and nothing gets selected.',
+        'מורה AI מדומה מסביר בפסקאות קצרות, בהקראה. מרכז המסך הוא אזור שקט: נועה יכולה לקרוא ולהניח שם את העיניים, ושום דבר לא נבחר.');
+    if(App.settings.frame){ await waitFor('.fr-center'); await hl('.fr-center', 3600);
+      say('Actions live on the edges','הפעולות בשוליים',
+          'Every action has a fixed place on the edge, so her eyes learn where to go: Today and Talk on one side, Again and Next on the other.',
+          'לכל פעולה יש מקום קבוע בשוליים, כך שהעיניים לומדות לאן ללכת: "היום" ו"לדבר" בצד אחד, "שוב" ו"הבא" בצד השני.');
+      await hl('.fr-start', 2400); await hl('.fr-end', 2400); }
     await waitFor('#lzCont', 40000); await w(1500);
     await look('#lzCont');
     await waitFor('#lzCont', 40000); await w(800);
     say('Talking back with the word bank','לדבר עם המורה דרך בנק המילים',
-        'Under the lesson is a word bank. Noa looks at a word, then picks one of three ready sentences: a full question in two looks.',
-        'מתחת לשיעור יש בנק מילים. נועה מסתכלת על מילה, ובוחרת אחד משלושה משפטים מוכנים: שאלה שלמה בשני מבטים.');
+        'Noa looks at Talk and a drawer opens with phrases and lesson words. She picks a word, then one of three ready sentences: a full question in two looks.',
+        'נועה מסתכלת על "לדבר" ונפתחת מגירה עם משפטים ומילים מהשיעור. היא בוחרת מילה, ואז אחד משלושה משפטים מוכנים: שאלה שלמה בשני מבטים.');
+    if(App.settings.frame) await look('#frTalk');
     await look('#bankB [data-w]:nth-child(3)');
     await look('#bankA [data-sq="1"]');
     await w(5200);
@@ -193,21 +199,22 @@ const CH = [
     say('Answering by looking','עונים במבט',
         'Ollie asks a question with three big answers. Noa first looks at a wrong one…',
         'ינשופי שואל שאלה עם שלוש תשובות גדולות. נועה מסתכלת קודם על תשובה לא נכונה…');
-    await waitFor('#lzAct [data-o]', 40000); await w(800);
-    await look('#lzAct [data-o="1"]');
+    await waitFor('[data-o]', 40000); await w(800);
+    await look('[data-o="1"]');
     say('The second-look safety check','בדיקת הבטיחות של המבט השני',
-        'Looking at an answer only marks it. A green ✓ appears under that answer alone. Nothing counts until she looks at the ✓, so she can still change her mind.',
-        'מבט על תשובה רק מסמן אותה. ✓ ירוק מופיע רק מתחת לתשובה הזאת. שום דבר לא נספר עד שהיא מסתכלת על ה־✓, כך שאפשר עדיין להתחרט.');
+        'Looking at an answer only marks it. A green ✓ appears, always in the same forward corner. Nothing counts until she looks at the ✓, so she can still change her mind.',
+        'מבט על תשובה רק מסמן אותה. ✓ ירוק מופיע, תמיד באותה פינה קדימה. שום דבר לא נספר עד שהיא מסתכלת על ה־✓, כך שאפשר עדיין להתחרט.');
     await w(3200);
-    await look('#lzAct [data-o="0"]');
+    await look('[data-o="0"]');
     await w(1500);
-    await look('#lzAct .cf.on');
+    await look('.cf.on');
     await waitFor('#lzCont', 30000); await w(1400);
   },
   async () => {
     say('Asking for a break','לבקש הפסקה',
         'One look at "I need a break" pauses the lesson and sends the parent a notification.',
         'מבט אחד על "אני צריכה הפסקה" עוצר את השיעור ושולח התראה להורה.');
+    if(App.settings.frame) await look('#frTalk');
     await look('#bankA [data-ph=break]');
     await waitFor('#brkDone', 20000); await w(3000);
     await look('#brkDone');
@@ -216,15 +223,22 @@ const CH = [
     await look('#lzCont');
     await waitFor('#lzCont', 40000); await w(600);
     await look('#lzCont');
-    await waitFor('#lzAct [data-o]', 40000); await w(600);
-    await look('#lzAct [data-o="0"]');
-    await look('#lzAct .cf.on');
+    await waitFor('[data-o]', 40000); await w(600);
+    await look('[data-o="0"]');
+    await look('.cf.on');
     await waitFor('#lzCont', 30000); await w(1000);
     await look('#lzCont');
-    await waitFor('#lzHome', 30000);
-    say('Lesson done','השיעור הסתיים', 'Her score and everything she said go straight to the parent\'s report.', 'הציון וכל מה שהיא אמרה מגיעים ישר לדוח של ההורה.');
-    await hl('.lz-end', 2600);
-    await look('#lzHome');
+    if(App.settings.frame){
+      await waitFor('#frFwd .fr-go', 30000);
+      say('Lesson done','השיעור הסתיים', 'Her score goes to the parent\'s report. Leaving the lesson needs a longer look on Today, so a passing glance never closes it.', 'הציון מגיע לדוח של ההורה. יציאה מהשיעור דורשת מבט ארוך יותר על "היום", כך שמבט חולף לא סוגר אותו.');
+      await hl('#frFwd', 2400);
+      await look('#frBack');
+    } else {
+      await waitFor('#lzHome', 30000);
+      say('Lesson done','השיעור הסתיים', 'Her score and everything she said go straight to the parent\'s report.', 'הציון וכל מה שהיא אמרה מגיעים ישר לדוח של ההורה.');
+      await hl('.lz-end', 2600);
+      await look('#lzHome');
+    }
   },
   async () => {
     say('Learn something else','ללמוד משהו אחר',

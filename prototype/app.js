@@ -30,7 +30,7 @@ const START = 16*60, CAL_MIN = 2;
 
 const App = window.App = {
   SUBJ, sn, tp, adult: ADULTS.parent, confirmed:false, confirmedAt:'', input:'mouse', calErr:null, sound:true,
-  settings: { breakMin:3, confirmStep:true, readAloud:true, notify:true },
+  settings: { breakMin:3, confirmStep:true, readAloud:true, notify:true, frame:!/classic/.test(location.hash) },
   sched: [],
   view: null,                       // re-draws the screen on show (used by the language switch)
 };
@@ -45,7 +45,8 @@ App.today = { answers:[], said:[], breaks:0 };
 /* fresh start for the autoplay tour */
 App.reset = () => {
   Object.assign(App, { sched:defaultSched(), today:{ answers:[], said:[], breaks:0 }, confirmed:false, confirmedAt:'', calErr:null, input:'mouse', adult:ADULTS.parent });
-  Object.assign(App.settings, { breakMin:3, confirmStep:true, readAloud:true, notify:true });
+  Object.assign(App.settings, { breakMin:3, confirmStep:true, readAloud:true, notify:true, frame:true });
+  layoutLabel();
   if($('#inputMode').value!=='mouse'){ $('#inputMode').value='mouse'; window.Gaze?.setMode('mouse'); }
   state.dwellOn = true; $('#dwellOn').checked = true;
   updateNav();
@@ -567,7 +568,7 @@ function sSubjects(){
 }
 function openItem(it, carry){
   if(it.subj==='free') return sLearnElse('menu');
-  clearStage(); setTop(`${sn(it.subj)} · ${tp(it.topic)}`, true);
+  clearStage(); setTop(`${sn(it.subj)} · ${tp(it.topic)}`, !App.settings.frame);   // the frame has its own Today corner
   App.view = () => openItem(it, window.Lesson.state());
   window.Lesson.start(it, { onNext:it2 => openItem(it2), onHome:sToday }, carry);
 }
@@ -611,6 +612,15 @@ $('#sSound').onclick = () => {
   if(!App.sound) try{ speechSynthesis.cancel(); }catch(e){}
 };
 $('#toStudent').onclick = openSwitch;
+/* compare lesson layouts: the gaze frame (default) or the classic layout */
+function layoutLabel(){ const el = $('#sLayoutL'); if(el) el.textContent = App.settings.frame ? tr('Layout: Frame','פריסה: מסגרת') : tr('Layout: Classic','פריסה: קלאסית'); }
+$('#sLayout').onclick = () => {
+  App.settings.frame = !App.settings.frame; layoutLabel();
+  log('layout', App.settings.frame ? 'frame' : 'classic');
+  if(App.view) App.view();
+};
+layoutLabel();
+addEventListener('langchange', layoutLabel);
 $('#signOut').onclick = () => { log('auth.sign_out', App.adultName()); renderConnect(); };
 
 /* ================= demo navigator (for presenting the flow) ================= */
