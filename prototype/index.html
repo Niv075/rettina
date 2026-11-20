@@ -77,15 +77,54 @@ header .sp{flex:1}
 .big:hover{border-color:var(--accent)}
 
 /* gaze cursor, calibration, preview */
-#gazeDot{position:fixed;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:color-mix(in srgb,var(--accent) 35%,transparent);border:2px solid var(--accent);pointer-events:none;z-index:60;display:none;transition:left .03s linear,top .03s linear}
+#gazeDot{position:fixed;left:0;top:0;width:38px;height:38px;margin:-19px 0 0 -19px;border-radius:50%;background:color-mix(in srgb,var(--accent) 28%,transparent);border:3px solid var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent);pointer-events:none;z-index:65;display:none;will-change:transform}
+#gazeDot::after{content:"";position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:var(--accent)}
 #gazeDot.lost{border-style:dashed;background:transparent;opacity:.5}
 #calib{position:fixed;inset:0;background:var(--bg);z-index:55;display:none}
 #calib.on{display:block}
-#calibMsg{position:absolute;left:50%;top:50%;transform:translate(-50%,80px);text-align:center;color:var(--muted);font-size:17px;max-width:560px}
-#calibDot{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 10px var(--soft);transition:left .35s ease,top .35s ease}
-#calibDot::after{content:"";position:absolute;inset:17px;border-radius:50%;background:var(--panel)}
-#calibDot.shrink{animation:shrink linear forwards}
-@keyframes shrink{0%{transform:scale(1.4)}40%{transform:scale(1)}100%{transform:scale(.45)}}
+#calibCard{position:absolute;left:50%;top:calc(50% + 56px);transform:translateX(-50%);width:min(460px,calc(100% - 280px));display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;z-index:2;pointer-events:none}
+#calib.setup #calibCard,#calib.verify #calibCard{top:50%;transform:translate(-50%,-50%);background:color-mix(in srgb,var(--panel) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:22px;padding:18px 22px;box-shadow:0 18px 50px var(--glow)}
+#calibMsg{color:var(--muted);font-size:16px;line-height:1.4;max-width:420px}
+#calib.setup #calibMsg,#calib.verify #calibMsg{color:var(--ink)}
+#calib.setup #calibDot{display:none}
+#calibHud{display:none;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+#calib.real #calibHud{display:flex}
+#calibCam{width:124px;height:93px;border-radius:12px;border:2px solid var(--line);background:#000;transition:width .2s,height .2s}
+#calib.setup #calibCam{width:236px;height:177px;border-color:var(--accent)}
+#calib.verify #calibCam{width:152px;height:114px}
+#calibChecks{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#calibCamStat,#calibFace{font-size:12.5px;font-weight:600;padding:3px 11px;border-radius:99px;background:var(--code);color:var(--muted);white-space:nowrap}
+#calibCamStat[data-ok="1"],#calibFace[data-ok="1"]{background:color-mix(in srgb,var(--ok) 15%,var(--panel));color:var(--ok)}
+#calibCamStat[data-ok="0"],#calibFace[data-ok="0"]{background:color-mix(in srgb,var(--bad) 15%,var(--panel));color:var(--bad)}
+#calibStep{font-size:13px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+#calibSetupActs,#calibActs{display:none;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;pointer-events:auto}
+#calib.setup #calibSetupActs{display:flex}
+#calib.verify #calibActs{display:flex}
+#calib.verify #calibDot{display:none}
+#calib.verify{cursor:crosshair}
+.cal-ring{position:absolute;width:82px;height:82px;margin:-41px 0 0 -41px;border-radius:50%;border:3px dashed color-mix(in srgb,var(--accent) 55%,transparent);background:color-mix(in srgb,var(--soft) 45%,transparent);pointer-events:none;display:none;align-items:center;justify-content:center;font-weight:800;font-size:28px;color:var(--ok);transition:transform .2s,border-color .2s,background .2s,box-shadow .2s}
+.cal-ring::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.cal-ring svg{position:absolute;inset:-4px;width:calc(100% + 8px);height:calc(100% + 8px);transform:rotate(-90deg)}
+.cal-ring circle{fill:none;stroke:var(--ok);stroke-width:6;stroke-linecap:round;stroke-dasharray:226;stroke-dashoffset:226;transition:stroke-dashoffset .06s linear}
+.cal-ring.current{border-style:solid;border-color:var(--accent);box-shadow:0 0 0 8px color-mix(in srgb,var(--accent) 20%,transparent);animation:calpulse 1.3s ease-in-out infinite}
+.cal-ring.active{transform:scale(1.1);border-color:var(--accent);background:color-mix(in srgb,var(--accent) 18%,var(--panel))}
+.cal-ring.hit{border:3px solid var(--ok);background:color-mix(in srgb,var(--ok) 18%,var(--panel));transform:scale(1.04);box-shadow:0 0 0 4px color-mix(in srgb,var(--ok) 14%,transparent);animation:none}
+.cal-ring.hit::after{content:"✓";width:auto;height:auto;background:none;color:var(--ok)}
+.cal-err{position:absolute;top:calc(100% + 6px);left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:99px;background:var(--panel);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.cal-ring.hit .cal-err{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,var(--line))}
+.cal-err:empty{display:none}
+@keyframes calpulse{50%{box-shadow:0 0 0 14px color-mix(in srgb,var(--accent) 6%,transparent)}}
+#calib.verify .cal-ring{display:flex}
+#calOk:disabled{opacity:.48;cursor:not-allowed;filter:grayscale(.3)}
+.cal-ping{position:absolute;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:3px solid var(--ok);pointer-events:none;animation:ripple .6s ease-out forwards}
+#calibDot{position:absolute;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;transition:left .28s ease,top .28s ease;z-index:3;cursor:pointer}
+#calibDot::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 8px var(--soft)}
+#calibDot::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--ink)}
+#calibDot.shrink::before{animation:shrink linear forwards;animation-duration:inherit}
+#calibDot svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);pointer-events:none}
+#calibDot circle{fill:none;stroke:var(--ok);stroke-width:5;stroke-linecap:round;stroke-dasharray:151;stroke-dashoffset:151;transition:stroke-dashoffset .08s linear}
+#calibDot.paused::before{background:var(--bad);opacity:.65}
+@keyframes shrink{0%{transform:scale(1.35)}35%{transform:scale(1)}100%{transform:scale(.35)}}
 #camPreview{position:fixed;right:16px;bottom:40px;width:200px;height:150px;border-radius:12px;border:1px solid var(--line);z-index:30;display:none;background:#000}
 
 /* ---------- Conversation ---------- */
@@ -124,7 +163,7 @@ header .sp{flex:1}
 #modal{position:fixed;inset:0;background:#0007;display:none;align-items:center;justify-content:center;z-index:10}
 #modal.on{display:flex}
 #modal .card{background:var(--panel);border-radius:18px;padding:22px;width:min(640px,92vw);display:flex;flex-direction:column;gap:14px}
-#toast{position:fixed;top:64px;right:18px;background:var(--panel);border:1px solid var(--line);border-inline-start:5px solid var(--accent);border-radius:12px;padding:12px 16px;box-shadow:0 8px 30px #0003;display:none;z-index:11;max-width:360px}
+#toast{position:fixed;top:64px;right:18px;background:var(--panel);border:1px solid var(--line);border-inline-start:5px solid var(--accent);border-radius:12px;padding:12px 16px;box-shadow:0 8px 30px #0003;display:none;z-index:95;max-width:380px}
 #toast.on{display:block;animation:newin .5s}
 #toast small{color:var(--muted);display:block}
 
@@ -390,6 +429,18 @@ body[data-mode="student"] #student{display:flex}
 .st-ok{width:clamp(90px,9vw,140px);aspect-ratio:1;border-radius:50%;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-size:clamp(48px,5vw,80px);animation:pop .4s}
 @keyframes pop{from{transform:scale(.6);opacity:0}}
 .st-adult{max-width:760px;font-size:15px;color:var(--muted);border-top:1px dashed var(--line);padding-top:12px}
+.cam-gate{max-width:680px;width:100%;display:flex;align-items:center;gap:12px;text-align:start;padding:12px 16px;border-radius:14px;border:1px solid var(--line);background:var(--panel);font-size:14.5px;flex-wrap:wrap}
+.cam-gate.ok{border-color:color-mix(in srgb,var(--ok) 45%,var(--line));background:color-mix(in srgb,var(--ok) 10%,var(--panel))}
+.cam-gate.warn{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:color-mix(in srgb,var(--warn) 14%,var(--panel))}
+.cam-gate.bad{border-color:color-mix(in srgb,var(--bad) 55%,var(--line));background:color-mix(in srgb,var(--bad) 12%,var(--panel))}
+.cam-gate .t{flex:1;min-width:200px}
+.cam-gate small{display:block;color:var(--muted);font-size:13px;margin-top:2px}
+.cam-gate:empty{display:none}
+.cam-mirror{display:flex;flex-direction:column;align-items:center;gap:8px}
+.cam-mirror canvas{width:220px;height:165px;border-radius:16px;border:3px solid var(--line);background:#12101c;box-shadow:0 8px 24px #0002;transition:border-color .2s}
+.cam-mirror[data-ok="1"] canvas{border-color:var(--ok)}
+.cam-mirror[data-ok="0"] canvas{border-color:var(--bad)}
+.fr-tile.locked,.st-tile.locked{opacity:.42;filter:grayscale(.4);cursor:not-allowed}
 .handoff{max-width:820px;display:flex;gap:16px;align-items:flex-start;text-align:start;background:var(--panel);border:1px solid var(--line);border-inline-start:6px solid var(--ok);border-radius:16px;padding:16px 20px;font-size:16px}
 .handoff .em{font-size:34px;line-height:1}
 .handoff b{font-size:18px;display:block;margin-bottom:2px}
@@ -633,6 +684,10 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
 .src-plus{color:var(--ink);font-weight:600;display:inline-flex;align-items:center;gap:3px}
 .rowi .em:not(:has(svg)){font-weight:800;color:var(--accent)}
 
+.st-gaze{font-size:12px;font-weight:600;color:var(--ok);white-space:nowrap}
+.st-gaze:empty{display:none}
+.st-gaze[data-bad="1"]{color:var(--bad)}
+
 /* ---------- phone width ---------- */
 @media (max-width:820px){
   body{flex-direction:column;overflow:auto;height:auto;min-height:100%}
@@ -683,6 +738,9 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
     <span class="sp"></span>
     <div class="st-topacts" id="sTopActs"></div>
     <button class="lang-sw" type="button"></button>
+    <span class="st-gaze" id="sGazeStat" aria-live="polite"></span>
+    <button class="st-mini" id="sTestGaze" style="display:none" data-i18n-title="stu.testGazeT"><i data-lucide="scan-eye"></i> <span data-i18n="set.testGaze">Test & refine</span></button>
+    <button class="st-mini" id="sRecal" style="display:none" data-i18n-title="stu.recalT"><i data-lucide="crosshair"></i> <span data-i18n="set.calibrate">Calibrate</span></button>
     <button class="st-mini" id="sLayout" title="Compare lesson layouts"><i data-lucide="layout-grid"></i> <span id="sLayoutL"></span></button>
     <button class="st-mini" id="sSound" data-i18n-title="stu.soundT"><i data-lucide="volume-2"></i> <span data-i18n="stu.sound">Sound</span></button>
     <button class="st-mini demo-open" data-i18n="demo">Demo ▾</button>
@@ -713,7 +771,7 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
   <div class="side-foot">
     <div class="nav-label" data-i18n="set.input">Input</div>
     <label><span data-i18n="set.pointer">Pointer</span> <select id="inputMode"><option value="mouse" data-i18n="opt.mouse">Mouse</option><option value="gaze" data-i18n="opt.gaze">Webcam eye gaze</option><option value="head" data-i18n="opt.head">Webcam head pointer</option></select></label>
-    <div class="row"><button class="btn sm" id="calBtn"><i data-lucide="crosshair"></i> <span data-i18n="set.calibrate">Calibrate</span></button><label style="padding:0;gap:4px"><span data-i18n="set.camera">Camera</span> <input type="checkbox" id="camOn"></label></div>
+    <div class="row"><button class="btn sm" id="calBtn"><i data-lucide="crosshair"></i> <span data-i18n="set.calibrate">Calibrate</span></button><button class="btn sm" id="calTestBtn"><i data-lucide="scan-eye"></i> <span data-i18n="set.testGaze">Test & refine</span></button><label style="padding:0;gap:4px"><span data-i18n="set.camera">Camera</span> <input type="checkbox" id="camOn"></label></div>
     <label><span data-i18n="set.snap">Snap radius</span> <input type="range" id="snap" min="0" max="300" step="10" value="140"><span id="snapVal" class="mono">140</span></label>
     <label><span data-i18n="set.dwellOn">Dwell select</span> <input type="checkbox" id="dwellOn" checked></label>
     <label><span data-i18n="set.dwellMs">Dwell time</span> <input type="range" id="dwellMs" min="500" max="5000" step="100" value="1200"><span id="dwellVal" class="mono">1.2s</span></label>
@@ -803,7 +861,25 @@ aside{background:linear-gradient(180deg,var(--side),color-mix(in srgb,var(--side
 <div id="modal"><div class="card" id="modalCard"></div></div>
 <div id="toast"></div>
 <div id="gazeDot"></div>
-<div id="calib"><div id="calibDot"></div><div id="calibMsg"></div></div>
+<div id="calib">
+  <div id="calibDot"><svg viewBox="0 0 54 54"><circle id="calibProg" cx="27" cy="27" r="24"/></svg></div>
+  <div class="cal-ring" data-ci="0" style="left:8%;top:16%"><svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="36"/></svg><span class="cal-err"></span></div>
+  <div class="cal-ring" data-ci="1" style="left:8%;top:50%"><svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="36"/></svg><span class="cal-err"></span></div>
+  <div class="cal-ring" data-ci="2" style="left:8%;top:84%"><svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="36"/></svg><span class="cal-err"></span></div>
+  <div class="cal-ring" data-ci="3" style="left:92%;top:16%"><svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="36"/></svg><span class="cal-err"></span></div>
+  <div class="cal-ring" data-ci="4" style="left:92%;top:50%"><svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="36"/></svg><span class="cal-err"></span></div>
+  <div class="cal-ring" data-ci="5" style="left:92%;top:84%"><svg viewBox="0 0 82 82"><circle cx="41" cy="41" r="36"/></svg><span class="cal-err"></span></div>
+  <div id="calibCard">
+    <div id="calibMsg"></div>
+    <div id="calibHud">
+      <span id="calibStep"></span>
+      <canvas id="calibCam" width="320" height="240"></canvas>
+      <div id="calibChecks"><span id="calibCamStat"></span><span id="calibFace"></span></div>
+      <div id="calibSetupActs"><button class="btn primary" id="calBegin" type="button" disabled data-i18n="cal.beginBtn">Start calibration</button><button class="btn" id="calCancel" type="button" data-i18n="cal.cancelBtn">Cancel</button></div>
+      <div id="calibActs"><button class="btn primary" id="calOk" type="button" disabled data-i18n="cal.okBtn">Continue ✓</button><button class="btn" id="calAgain" type="button" data-i18n="cal.againBtn">Recalibrate</button><button class="btn sm" id="calSkip" type="button" data-i18n="cal.skipBtn">Skip</button></div>
+    </div>
+  </div>
+</div>
 <canvas id="camPreview" width="320" height="240"></canvas>
 
 <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
@@ -858,39 +934,64 @@ $('#inputMode').onchange = async e => {
   catch(err){ e.target.value='mouse'; await window.Gaze.setMode('mouse'); toast(t('camErr', {e:esc(err.message||err.name)})); }
 };
 $('#calBtn').onclick = () => window.Gaze.calibrate();
+$('#calTestBtn').onclick = () => window.Gaze.validate?.();
 $('#camOn').onchange = e => window.Gaze.setPreview(e.target.checked);
 
 /* ================= dwell engine (mouse, eye gaze or head pointer) ================= */
-const Dwell = { source:'mouse', target:null, start:0, spent:null, fired:null };
+const Dwell = { source:'mouse', target:null, start:0, elapsed:0, lastTick:0, lostAt:0, pending:null, pendingAt:0, spent:null, fired:null, guarded:null, guardAt:0, point:null };
 window.Dwell = Dwell;
-function setTarget(t){
-  if(t===Dwell.target) return;
+function clearTarget(){
   if(Dwell.target){ Dwell.target.style.setProperty('--p',0); Dwell.target.classList.remove('gz'); }
-  Dwell.target = null;
-  if(t!==Dwell.spent) Dwell.spent = null;
+  Dwell.target = null; Dwell.elapsed = 0; Dwell.lostAt = 0; Dwell.pending = null; Dwell.pendingAt = 0;
+}
+function isFreshBlocked(t){
+  if(!t || !t.dataset.fresh || !Dwell.point) return false;
+  const r = t.getBoundingClientRect(), m = 60, p = Dwell.point;
+  return p.x > r.left-m && p.x < r.right+m && p.y > r.top-m && p.y < r.bottom+m;
+}
+function setTarget(t){
+  const now = performance.now();
   /* a new tile rendered where she just selected must be looked away from first (no accidental double pick) */
   const f = Dwell.fired;
-  if(t && t!==Dwell.spent && f && !document.body.contains(f.el) && performance.now()-f.at<4000){
+  if(t && t!==Dwell.spent && f && !document.body.contains(f.el) && now-f.at<4000){
     const r = t.getBoundingClientRect();
-    if(f.x>=r.left && f.x<=r.right && f.y>=r.top && f.y<=r.bottom){ Dwell.spent = t; Dwell.guarded = t; Dwell.guardAt = performance.now(); }
-  }
-  /* a fresh ✓ (data-fresh) can't be selected while the eyes are still where it appeared: they must leave its area first */
-  if(t && t.dataset.fresh && Dwell.point){
-    const r = t.getBoundingClientRect(), m = 60, p = Dwell.point;
-    if(p.x > r.left-m && p.x < r.right+m && p.y > r.top-m && p.y < r.bottom+m) return;
+    if(f.x>=r.left && f.x<=r.right && f.y>=r.top && f.y<=r.bottom){ Dwell.spent = t; Dwell.guarded = t; Dwell.guardAt = now; }
   }
   /* with gaze the eyes stay on the same spot, so a tile held back only because it replaced the one just chosen
      is released after a short pause (a tile that was itself chosen still needs a look away) */
-  if(t && t===Dwell.spent && t===Dwell.guarded && Dwell.source!=='mouse' && performance.now()-(Dwell.guardAt||0)>1200){ Dwell.spent = null; Dwell.guarded = null; }
-  if(t && state.dwellOn && t!==Dwell.spent){ Dwell.target=t; Dwell.start=performance.now(); if(Dwell.source!=='mouse') t.classList.add('gz'); }
+  if(t && t===Dwell.spent && t===Dwell.guarded && Dwell.source!=='mouse' && now-(Dwell.guardAt||0)>1200){ Dwell.spent = null; Dwell.guarded = null; }
+  /* a fresh ✓ (data-fresh) can't be selected while the eyes are still where it appeared: they must leave its area first */
+  if(isFreshBlocked(t)) t = null;
+  /* in gaze/head mode, absorb brief blinks or 1–3 frame jitter flickers without wiping dwell progress */
+  if(Dwell.source!=='mouse' && Dwell.target && t!==Dwell.target){
+    const validCur = document.body.contains(Dwell.target) && Dwell.target.offsetParent!==null && getComputedStyle(Dwell.target).visibility!=='hidden';
+    if(validCur){
+      if(!t){
+        if(!Dwell.lostAt) Dwell.lostAt = now;
+        if(now - Dwell.lostAt < 260) return;          // grace window: pause progress, don't reset
+      } else {
+        if(Dwell.pending !== t){ Dwell.pending = t; Dwell.pendingAt = now; }
+        if(now - Dwell.pendingAt < 110) return;       // brief switch debounce prevents edge flicker
+      }
+    }
+  }
+  if(t === Dwell.target){ Dwell.lostAt = 0; Dwell.pending = null; Dwell.pendingAt = 0; return; }
+  clearTarget();
+  if(t !== Dwell.spent) Dwell.spent = null;
+  if(t && state.dwellOn && t !== Dwell.spent){
+    Dwell.target = t; Dwell.start = now; Dwell.lastTick = now; Dwell.elapsed = 0;
+    if(Dwell.source !== 'mouse') t.classList.add('gz');
+  }
 }
-Dwell.gazeTarget = t => { if(Dwell.source!=='mouse') setTarget(t); else if(!t) setTarget(null); };
+Dwell.reset = () => { clearTarget(); Dwell.spent = null; Dwell.guarded = null; };
+Dwell.gazeTarget = t => { if(Dwell.source!=='mouse') setTarget(t); else if(!t) clearTarget(); };
 document.addEventListener('pointerover', e=>{ if(Dwell.source==='mouse' && !Dwell.locked) setTarget(e.target.closest('.dw')); });
 document.addEventListener('mouseleave', ()=>{ if(Dwell.source==='mouse' && !Dwell.locked) setTarget(null); });
 document.addEventListener('pointermove', e=>{ if(Dwell.source==='mouse' && !Dwell.locked) Dwell.point = { x:e.clientX, y:e.clientY }; });
 /* the autoplay tour looks at a tile on Noa's behalf (real mouse movement is ignored while it runs) */
-Dwell.force = el => { Dwell.fired=null; Dwell.spent=null; if(el) delete el.dataset.fresh; setTarget(el); };
+Dwell.force = el => { Dwell.fired=null; Dwell.spent=null; Dwell.guarded=null; clearTarget(); if(el) delete el.dataset.fresh; setTarget(el); };
 (function loop(){
+  const now = performance.now();
   /* release a fresh ✓ once the eyes have moved away from it */
   if(Dwell.point) document.querySelectorAll('[data-fresh]').forEach(el => {
     const r = el.getBoundingClientRect(), m = 60, p = Dwell.point;
@@ -898,12 +999,15 @@ Dwell.force = el => { Dwell.fired=null; Dwell.spent=null; if(el) delete el.datas
   });
   const t = Dwell.target;
   if(t){
-    if(!document.body.contains(t) || t.offsetParent===null || getComputedStyle(t).visibility==='hidden'){ Dwell.target=null; }
+    if(!document.body.contains(t) || t.offsetParent===null || getComputedStyle(t).visibility==='hidden'){ clearTarget(); }
     else{
-      const p = Math.min(1,(performance.now()-Dwell.start)/(state.dwellMs*(+t.dataset.dwell||1)));   /* data-dwell="2": risky actions need a longer look */
+      const dt = Math.min(100, Math.max(0, now - (Dwell.lastTick || now)));
+      Dwell.lastTick = now;
+      if(!Dwell.lostAt) Dwell.elapsed += dt;
+      const p = Math.min(1, Dwell.elapsed / (state.dwellMs * (+t.dataset.dwell || 1)));   /* data-dwell="2": risky actions need a longer look */
       t.style.setProperty('--p',p);
-      if(p>=1){ const r=t.getBoundingClientRect(); Dwell.fired={el:t, at:performance.now(), x:(r.left+r.right)/2, y:(r.top+r.bottom)/2};
-        Dwell.spent=t; t.style.setProperty('--p',0); t.classList.remove('gz'); Dwell.target=null; t.click(); flash(t); if(t.classList.contains('fz')) window.uiTick?.(); }
+      if(p>=1){ const r=t.getBoundingClientRect(); Dwell.fired={el:t, at:now, x:(r.left+r.right)/2, y:(r.top+r.bottom)/2};
+        Dwell.spent=t; Dwell.guarded=null; clearTarget(); t.click(); flash(t); if(t.classList.contains('fz')) window.uiTick?.(); }
     }
   }
   requestAnimationFrame(loop);

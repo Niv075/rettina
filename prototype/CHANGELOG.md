@@ -18,6 +18,64 @@ To compare without git: in Noa's mode press **Layout: Frame / Classic** in the t
 
 ---
 
+## 2026-11-20 · Side-edge gaze accuracy, camera mirror gate, closed-loop 6-target validation & auto-refinement
+
+**Why:** calibration previously had no real-camera/face failsafe (allowing calibration with no camera), verification did not confirm gaze on the sides, and predictions fell short toward the left and right edges of the screen where the Gaze Frame tiles live.
+
+**What changed**
+1. **Welcome screen live camera mirror & permission gate (`app.js`, `index.html`, `gaze.js`, `i18n.js`):**
+   - Entering Noa's *Hi Noa!* screen in webcam gaze/head mode automatically tries to turn on the camera (`enableCamera()`) so Chrome prompts for camera permission immediately, and shows a live `220×165` mirrored preview with face oval + green iris dots (`#welcomeCam`).
+   - *Start* (`#calGo`) stays dimmed and locked until the camera is active and a face is detected (`onWelcomeCamFrame`).
+   - Removed silent fallback from real camera errors to fake mouse calibration (`realCalibrate` in `app.js`): camera errors now show an explicit modal with **Try again / Switch to mouse demo / Cancel**.
+   - Standalone calibration (`Gaze.calibrate()`) also enforces a mandatory **Camera & face check** gate (`setupFaceStreak >= 10`) and frame-locked dot collection (`showAt` fills an SVG progress ring only while live non-blink frames arrive, pausing if the face drops out).
+2. **Side-edge gaze accuracy (`gaze.js`, `CAL_VERSION = 4`):**
+   - Added separate per-eye horizontal iris features (`rx`, `lx`) and signed quadratic edge-expansion features (`ex2`, `ey2`) in `features()` and `GAZE_KEYS` to handle single-eye abduction compression near side edges.
+   - Separated eye vs. head regularization (`GAZE_FLOOR`, `GAZE_PEN_X/Y`, `GAZE_HEAD_PEN_X/Y`) so real vertical/horizontal eye ranges are not over-shrunk toward screen center.
+   - Added center-anchored piecewise edge gain calibration (`stretchAxis` / `applyStretch`, clamped to `[0.85, 1.55]`) in `fitMode` and `predictNorm` so left and right edge predictions reach all the way to `u = 0..1`.
+   - Widened the 9-dot grid closer to the frame rails (`mx <= 64`, `my <= 64`), moved the 4 check dots onto the side rails (`[0.08, 0.32]`, `[0.92, 0.32]`, `[0.92, 0.68]`, `[0.08, 0.68]`), and increased the horizontal quiet-zone capture band `bx` in `snap()` up to `105 px` (keeping vertical `by <= 42 px`).
+3. **Closed-loop 6-target side & corner validation + auto-refinement (`gaze.js`, `index.html`, `app.js`, `i18n.js`):**
+   - Extracted `runValidationLoop()` used both at the end of calibration and standalone via `window.Gaze.validate()`.
+   - Displays 6 side/corner targets (`8%` and `92%` horizontally × `16%`, `50%`, `84%` vertically) with pulsing active-target guidance, live SVG dwell rings, and per-ring error badges (`.cal-err`).
+   - **Auto-refinement:** if the user fixates steadily on the pulsing side target (`>= 16` clean frames over `>= 550 ms` with low variance) and the gaze dot still falls short on that side, it automatically anchors that target (`w: 2` weighted point), refits `G.cal` + `stretchAxis`, and updates the live dot in real time. Clicking any spot while looking at it also adds a `2×` anchor.
+   - **Continue ✓** stays locked until all 6 targets confirm `✓` (with explicit **Recalibrate** and secondary **Skip**).
+4. **UI refinements (`index.html`, `app.js`, `i18n.js`):**
+   - Consolidated calibration instructions, `1 / 13` counter, mini camera mirror, status pills, and action buttons into a single centered glass card (`#calibCard`) so the 6 side targets stay completely clear.
+   - Added **Test & refine** buttons (`#calTestBtn` in Parent sidebar, `#sTestGaze` in Noa's top bar) next to **Calibrate** (`#sRecal`) to launch the 6-target validation & refinement loop anytime without re-running all 13 dots.
+   - Raised `#toast` (`z-index: 95`) and `#gazeDot` (`z-index: 65`) with a solid center pinpoint.
+
+**Files modified (all currently uncommitted against `HEAD` `a2995c6`):**
+- `prototype/gaze.js` (`CAL_VERSION = 4`, `features`, `GAZE_KEYS/FLOOR/PEN`, weighted `fitAxisLOOCV`, `stretchAxis`, `applyStretch`, `snap`, `drawCalibStatus`, `runValidationLoop`, `calibrate`, `validateCalibration`, `window.Gaze.validate/isCameraOn/enableCamera`)
+- `prototype/index.html` (`#calibCard`, `#calibCamStat`, `.cal-ring.current/.cal-err`, `#camMirror`, `.cam-gate`, `#sTestGaze`, `#sRecal`, `#calTestBtn`, `Dwell` blink grace/debounce)
+- `prototype/app.js` (`sWelcome` mirror + `checkWelcomeCamera`, `realCalibrate` camera-error modal, `#sTestGaze`, `#sRecal`)
+- `prototype/i18n.js` (EN & HE calibration, mirror gate, and validation strings)
+- `prototype/CHANGELOG.md` (this log)
+
+**How to revert:**
+- Revert everything in the working tree back to last commit (`HEAD` = `a2995c6`):
+  `git checkout -- prototype/gaze.js prototype/index.html prototype/app.js prototype/i18n.js prototype/CHANGELOG.md`
+- Revert only a single file (for example `gaze.js`):
+  `git checkout -- prototype/gaze.js`
+- Clear saved v4 browser calibration in DevTools console if needed:
+  `localStorage.removeItem('rettina.calib')`
+
+---
+
+## 2026-11-19 · Overhaul: webcam eye-gaze & head-pointer accuracy, calibration, filtering and dwell
+
+**Symptom:** eye tracking became wildly inaccurate after moving to the gaze frame and drifted off target with even tiny head movements, blinks, or window resizes.
+
+**Root causes and fixes**
+1. **Standardizing tiny calibration head motion blew up post-calibration tracking.** Calibration asked users to keep their head still, making `std(yaw)`/`std(pitch)` tiny (~0.004); z-score division amplified accidental micro-turns into huge regression weights, so any 2–4° head shift after calibration threw gaze hundreds of pixels off-target. Uncentered `ex²`/`ey²` also overfit the 9 points (fitted on ~270 correlated frames with `lambda=2`) and warped near the edges. *Fix:* switched to normalized `[0,1]` viewport prediction with fixed physical minimum feature scales (`MIN_SCALE`), parallax-adjusted physics priors on 3D head pose/translation, cross-axis penalties, and per-axis Leave-One-Point-Out Cross-Validation (LOOCV) (`gaze.js`).
+2. **Weak vertical eye signal, aspect-ratio distortion, and 640×480 video.** `eyeFeat` mixed normalized `x` and `y` without correcting for webcam aspect ratio and relied only on iris-to-corner offset (only 2–4 px vertical sweep). *Fix:* request 1280×720 ideal video, enable MediaPipe `outputFaceBlendshapes` and `outputFacialTransformationMatrixes`, correct all geometry by video aspect ratio, and combine iris-to-corners, bone-anchored inner-corner iris offset, upper-eyelid drop (lid-eye synkinesis), ARKit `eyeLook*` blendshapes, and true 3D skull `yaw`/`pitch`/`roll` (`gaze.js`).
+3. **No blink detection, outlier trimming, or 13-point refit.** Blinks and slow saccades poisoned least-squares fitting, and the 4 validation dots were discarded. *Fix:* adaptive blink detection (`eyeBlink*` + eye openness), per-dot MAD outlier trimming + equal-weight point aggregation, honest 9→4 out-of-sample error measurement followed by a 13-point full refit, and calibration schema `v: 2` to invalidate stale pixel-space calibrations (`gaze.js`).
+4. **Framerate-dependent EMA and glitch amplification.** `steer()` smoothed on every 60/120 Hz display frame (4× per 30 fps webcam frame) and `a = 0.08 + jump/900` amplified 1-frame glitches. *Fix:* update filtering only on new video frames, freeze gaze across brief blinks (< 380 ms), apply a 3-frame median pre-filter + framerate-independent 1-Euro filter, and render `#gazeDot` with `translate3d` (`gaze.js`, `index.html`).
+5. **Calibration UI bugs.** Re-calibrating flashed the old `#gazeDot` over `#calib` during every settle window, dot #1 slid in from `(0, 0)`, and there was no face-in-view feedback or in-mode recalibrate button. *Fix:* dedicated `G.calibrating` guard, immediate centered dot #1 with bullseye target, live mini camera preview + face status badge inside `#calib`, mode-aware prompts (eye gaze vs head pointer), and an adult-only 1-click **Calibrate** button in Noa's top bar (`gaze.js`, `index.html`, `app.js`, `i18n.js`).
+6. **Quiet-zone & dwell interaction.** Shrinking `.quiet` by 140 px on all sides ate into Ollie's bottom question bubble (triggering the middle answer while reading), old hysteresis stuck on neighboring tiles in dense grids, and a 1-frame drop wiped dwell progress to 0. *Fix:* asymmetric quiet-zone edge bands (≤ 75 px horizontal, ≤ 42 px vertical), Schmitt-trigger hysteresis, and a 260 ms blink/jitter grace window + 110 ms tile-switch debounce in gaze dwell (`gaze.js`, `index.html`).
+
+**Files:** `gaze.js`, `index.html`, `app.js`, `i18n.js`.
+
+---
+
 ## 2026-11-19 · Fix: webcam eye tracking in the frame layout
 
 **Symptom:** with real webcam eye gaze, tiles in the frame were hard or impossible to select, although tracking used to work.

@@ -461,39 +461,139 @@ function shell({ back = false, endTop = '', fwd = '', center = '', quiet = true,
 }
 
 /* 5 · welcome + calibration */
+let camPermObj = null, welcomeCamReady = false;
+function setStartUnlocked(ready){
+  welcomeCamReady = ready;
+  const b = $('#calGo'); if(!b) return;
+  b.classList.toggle('locked', !ready);
+  b.classList.toggle('dw', ready);
+}
+window.onWelcomeCamFrame = (faceOk) => {
+  if(App.view !== sWelcome || App.input === 'mouse') return;
+  const m = $('#camMirror'), el = $('#camGate');
+  if(m) m.dataset.ok = faceOk ? '1' : '';
+  if(faceOk && !welcomeCamReady){
+    setStartUnlocked(true);
+    if(el){
+      el.className = 'cam-gate ok';
+      el.innerHTML = `<span>${ic('circle-check')}</span><div class="t"><b>${tr('Camera on · face & eyes detected ✓','המצלמה פועלת · הפנים והעיניים זוהו ✓')}</b><small>${tr('You look centered! Press Start in the corner to begin calibration.','רואים אותך מצוין! לחצו על "מתחילים" בפינה כדי להתחיל כיול.')}</small></div>`;
+    }
+  } else if(!faceOk && welcomeCamReady){
+    setStartUnlocked(false);
+    if(el){
+      el.className = 'cam-gate warn';
+      el.innerHTML = `<span>${ic('scan-face')}</span><div class="t"><b>${tr('Camera on — center your face in the mirror','המצלמה פועלת — מקמו את הפנים במראה')}</b><small>${tr('Start will unlock as soon as your face and eyes are visible.','כפתור "מתחילים" ייפתח ברגע שהפנים והעיניים יזוהו.')}</small></div>`;
+    }
+  }
+};
 function sWelcome(){
   clearStage(); setTop(tr('Getting ready','מתכוננים')); App.view = sWelcome;
+  if(camPermObj){ camPermObj.onchange = null; camPermObj = null; }
+  welcomeCamReady = App.input === 'mouse';
+  const modePill = App.input === 'gaze' ? `<span class="chip acc">${ic('eye')} ${tr('Eye gaze (webcam)','מבט עיניים (מצלמה)')}</span>`
+    : App.input === 'head' ? `<span class="chip acc">${ic('smile')} ${tr('Head pointer (webcam)','הצבעה בראש (מצלמה)')}</span>`
+    : `<span class="chip warn">${ic('mouse-pointer-2')} ${tr('Mouse demo (simulated calibration)','הדגמת עכבר (כיול מדומה)')}</span>`;
+  const mirrorHtml = App.input === 'mouse' ? ''
+    : `<div class="cam-mirror" id="camMirror"><canvas id="welcomeCam" width="320" height="240"></canvas></div><div class="cam-gate" id="camGate"></div>`;
+  const onStartClick = () => {
+    if(App.input !== 'mouse' && !welcomeCamReady){
+      checkWelcomeCamera(true);   // never start dots when camera/face isn't ready — prompt camera instead!
+      return;
+    }
+    sCalibrate();
+  };
   if(App.settings.frame){
     shell({ center:`<div class="fr-hero">
-        <div class="st-big">${ic('hand')}</div>
         <div class="st-title">${tr('Hi Noa!','היי נועה!')}</div>
-        <div class="st-sub">${tr("Let's get your eyes ready. When you're ready, look at Start in the corner.",'בואי נכין את העיניים. כשאת מוכנה, תסתכלי על "מתחילים" בפינה.')}</div>
+        <div>${modePill}</div>
+        <div class="st-sub">${tr("Let's get your eyes ready. Make sure you can see yourself below, then press Start.",'בואי נכין את העיניים. ודאו שרואים את הפנים במראה למטה, ואז לחצו על "מתחילים".')}</div>
+        ${mirrorHtml}
         <div class="st-adult">${tr('For the adult: stay with Noa for this calibration (about 20 seconds). After that she can learn on her own.','למבוגר שליד נועה: כדאי להישאר איתה בזמן הכיול (כ־20 שניות). אחרי זה היא יכולה ללמוד לבד.')}</div></div>`,
       fwd: frTile('calGo', 'eye', tr('Start','מתחילים'), '', true) });
-    $('#calGo').onclick = sCalibrate;
+    $('#calGo').onclick = onStartClick;
+    if(App.input !== 'mouse'){ setStartUnlocked(false); checkWelcomeCamera(true); }
     return;
   }
   stage().innerHTML = `
   <div class="st-center">
-    <div class="st-big">${ic('hand')}</div>
     <div class="st-title">${tr('Hi Noa!','היי נועה!')}</div>
-    <div class="st-sub">${tr("Let's get your eyes ready. Look at each dot until it gets small.",'בואי נכין את העיניים. תסתכלי על כל נקודה עד שהיא נהיית קטנה.')}</div>
+    <div>${modePill}</div>
+    <div class="st-sub">${tr("Let's get your eyes ready. Make sure you can see yourself below, then press Start.",'בואי נכין את העיניים. ודאו שרואים את הפנים במראה למטה, ואז לחצו על "מתחילים".')}</div>
+    ${mirrorHtml}
     <div class="st-tile go dw" id="calGo"><span class="em">${ic('eye')}</span>${tr('Start','מתחילים')}</div>
     <div class="st-adult">${tr('For the adult: stay with Noa for this calibration (about 20 seconds). After that she can learn on her own.','למבוגר שליד נועה: כדאי להישאר איתה בזמן הכיול (כ־20 שניות). אחרי זה היא יכולה ללמוד לבד.')}</div>
   </div>`;
-  $('#calGo').onclick = sCalibrate;
+  $('#calGo').onclick = onStartClick;
+  if(App.input !== 'mouse'){ setStartUnlocked(false); checkWelcomeCamera(true); }
+}
+async function checkWelcomeCamera(autoTurnOn){
+  const el = $('#camGate'), m = $('#camMirror'); if(!el) return;
+  const paint = (cls, icon, title, sub, btnLabel, onBtn) => {
+    if(!document.body.contains(el)) return;
+    el.className = 'cam-gate ' + cls;
+    if(m) m.dataset.ok = cls === 'ok' ? '1' : cls === 'bad' ? '0' : '';
+    el.innerHTML = `<span>${ic(icon)}</span><div class="t"><b>${title}</b><small>${sub}</small></div>${btnLabel ? `<button class="btn ${cls==='warn'||cls==='bad'?'primary':''} sm" id="camGateBtn" type="button">${btnLabel}</button>` : ''}`;
+    if(onBtn) $('#camGateBtn').onclick = onBtn;
+  };
+  const turnOn = async () => {
+    setStartUnlocked(false);
+    paint('', 'loader', tr('Starting camera…','מפעילים את המצלמה…'), tr('Allow camera access if Chrome asks.', 'אשרו גישה למצלמה אם הדפדפן מבקש.'));
+    try{
+      await window.Gaze.enableCamera();
+      if(!document.body.contains(el)) return;
+      paint('warn', 'scan-face', tr('Camera on — center your face in the mirror','המצלמה פועלת — מקמו את הפנים במראה'),
+        tr('Start will unlock as soon as your face and eyes are visible.','כפתור "מתחילים" ייפתח ברגע שהפנים והעיניים יזוהו.'));
+    }catch(e){
+      const reason = esc(e?.message || e?.name || 'Camera unavailable');
+      setStartUnlocked(false);
+      paint('bad', 'camera-off', tr('Camera unavailable','המצלמה לא זמינה'),
+        tr(`${reason}. Turn on your camera or allow permission in the browser address bar to start calibration.`,
+           `${reason}. הפעילו את המצלמה או אשרו הרשאה בשורת הכתובת כדי להתחיל כיול.`),
+        tr('Try again','ניסיון חוזר'), turnOn);
+    }
+  };
+  if(window.Gaze?.isCameraOn?.()){
+    paint('warn', 'scan-face', tr('Camera on — center your face in the mirror','המצלמה פועלת — מקמו את הפנים במראה'),
+      tr('Start will unlock as soon as your face and eyes are visible.','כפתור "מתחילים" ייפתח ברגע שהפנים והעיניים יזוהו.'));
+    return;
+  }
+  if(!navigator.mediaDevices?.getUserMedia){
+    setStartUnlocked(false);
+    return paint('bad', 'camera-off', tr('Camera unavailable in this browser','המצלמה לא זמינה בדפדפן הזה'),
+      tr('Open this page on localhost or HTTPS to use webcam eye tracking.','פתחו את העמוד דרך localhost או HTTPS כדי להשתמש במצלמה.'));
+  }
+  try{
+    if(navigator.permissions?.query){
+      const p = await navigator.permissions.query({ name:'camera' });
+      camPermObj = p;
+      p.onchange = () => { if(App.view === sWelcome && document.body.dataset.mode === 'student') checkWelcomeCamera(p.state === 'granted'); };
+      if(p.state === 'denied'){
+        setStartUnlocked(false);
+        return paint('bad', 'camera-off', tr('Camera permission is blocked','הרשאת המצלמה חסומה'),
+          tr('Allow camera access in your browser address bar, then click Try again.','אפשרו גישה למצלמה בשורת הכתובת, ואז לחצו על ניסיון חוזר.'),
+          tr('Try again','ניסיון חוזר'), turnOn);
+      }
+    }
+  }catch(_){}
+  // Automatically try to turn on the camera so Chrome prompts the user right away!
+  if(autoTurnOn) return turnOn();
+  paint('warn', 'camera', tr('Camera is off','המצלמה כבויה'),
+    tr('Turn on your camera to check your framing before calibration.','הפעילו את המצלמה כדי לוודא שרואים את הפנים לפני הכיול.'),
+    tr('Turn on camera','הפעלת מצלמה'), turnOn);
 }
 async function sCalibrate(){
   log('gaze.calibrate', `start · ${App.input}`);
   const err = App.input==='mouse' ? await simCalibrate() : await realCalibrate(App.input);
+  if(err === false) return;     // user cancelled real calibration: stay on Welcome screen
   App.calErr = err;
   sReady();
 }
 async function simCalibrate(){
   const ov = $('#calib'), pt = $('#calibDot'), msg = $('#calibMsg');
+  const W = innerWidth, H = innerHeight, m = 70;
+  pt.style.transition = 'none'; pt.style.left = (W/2)+'px'; pt.style.top = (H/2)+'px'; void pt.offsetWidth; pt.style.transition = '';
   ov.classList.add('on');
   msg.innerHTML = tr('Look at each dot until it gets small.<br><small>Demo with mouse input: this calibration is simulated.</small>','תסתכלי על כל נקודה עד שהיא נהיית קטנה.<br><small>הדגמה עם עכבר: הכיול הזה מדומה.</small>');
-  const W = innerWidth, H = innerHeight, m = 70;
   await sleep(700);
   for(const [u,v] of [[.5,.5],[0,0],[.5,0],[1,0],[1,.5],[1,1],[.5,1],[0,1],[0,.5]]){
     pt.style.left = (m + u*(W-2*m)) + 'px'; pt.style.top = (m + v*(H-2*m)) + 'px';
@@ -506,16 +606,34 @@ async function simCalibrate(){
 }
 async function realCalibrate(mode){
   try{
-    await window.Gaze.calibrate();
+    const ok = await window.Gaze.calibrate(mode, { rethrow: true, skipGate: true });
+    if(!ok) return false;
     await window.Gaze.setMode(mode);
     $('#inputMode').value = mode;
-    let c = null; try{ c = JSON.parse(localStorage.getItem('rettina.calib') || 'null'); }catch(_){}
+    const c = window.Gaze.getCalibration?.();
     return c?.err?.[mode] ?? null;
   }catch(e){
-    App.input = 'mouse'; $('#inputMode').value = 'mouse';
+    const reason = esc(e?.message || e?.name || 'Camera unavailable');
     try{ await window.Gaze.setMode('mouse'); }catch(_){}
-    toast(tr(`Camera unavailable (${esc(e.message || e.name)}). <small>Continuing with the mouse.</small>`, `המצלמה לא זמינה (${esc(e.message || e.name)}). <small>ממשיכים עם העכבר.</small>`));
-    return simCalibrate();
+    // NEVER silently run fake mouse calibration when real camera fails — tell the user clearly!
+    return await new Promise(resolve => {
+      showModal(`
+        <h2 style="margin:0">${ic('camera-off')} ${tr('Camera not available','המצלמה לא זמינה')}</h2>
+        <div class="hint">${tr(`Could not start eye tracking: <b>${reason}</b>. Check that a webcam is connected and browser camera permission is allowed.`,
+                               `לא ניתן להפעיל מעקב עיניים: <b>${reason}</b>. בדקו שמחוברת מצלמה ושניתנה הרשאת מצלמה לדפדפן.`)}</div>
+        <div class="sw-acts">
+          <button class="btn" data-cam="cancel">${tr('Cancel','ביטול')}</button>
+          <button class="btn" data-cam="mouse">${tr('Switch to mouse demo','מעבר להדגמת עכבר')}</button>
+          <button class="btn primary" data-cam="retry">${tr('Try again','ניסיון חוזר')}</button>
+        </div>`);
+      $('#modalCard').onclick = async ev => {
+        const b = ev.target.closest('[data-cam]'); if(!b) return;
+        closeModal();
+        if(b.dataset.cam === 'retry') return resolve(await realCalibrate(mode));
+        if(b.dataset.cam === 'mouse'){ App.input = 'mouse'; $('#inputMode').value = 'mouse'; sWelcome(); return resolve(false); }
+        resolve(false);
+      };
+    });
   }
 }
 function sReady(){
@@ -676,6 +794,16 @@ $('#sSound').onclick = () => {
 $('#toStudent').onclick = openSwitch;
 /* compare lesson layouts: the gaze frame (default) or the classic layout */
 function layoutLabel(){ const el = $('#sLayoutL'); if(el) el.textContent = App.settings.frame ? tr('Layout: Frame','פריסה: מסגרת') : tr('Layout: Classic','פריסה: קלאסית'); }   // applies to all of Noa's screens
+$('#sTestGaze').onclick = async () => {
+  const m = $('#inputMode').value === 'head' ? 'head' : 'gaze';
+  const ok = await window.Gaze?.validate?.(m);
+  if(ok) App.calErr = window.Gaze.getCalibration?.()?.err?.[m] ?? App.calErr;
+};
+$('#sRecal').onclick = async () => {
+  const m = $('#inputMode').value === 'head' ? 'head' : 'gaze';
+  const ok = await window.Gaze?.calibrate(m);
+  if(ok) App.calErr = window.Gaze.getCalibration?.()?.err?.[m] ?? App.calErr;
+};
 $('#sLayout').onclick = () => {
   App.settings.frame = !App.settings.frame; layoutLabel();
   log('layout', App.settings.frame ? 'frame' : 'classic');
